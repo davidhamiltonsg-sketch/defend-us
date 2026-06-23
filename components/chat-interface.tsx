@@ -2,22 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Send, Trash2 } from "lucide-react";
-import { useAuth } from "@/lib/auth";
-import {
-  addMessage,
-  clearMessages,
-  subscribeIncidents,
-  subscribeMessages,
-} from "@/lib/firestore";
-import type { ChatMessage, Incident } from "@/lib/types";
+import { addMessage, clearMessages, getMessages } from "@/lib/firestore";
+import type { ChatMessage } from "@/lib/types";
 import { STARTER_PROMPTS } from "@/lib/coaching-context";
 
 export function ChatInterface() {
-  const { user } = useAuth();
-  const uid = user?.uid;
-
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [incidents, setIncidents] = useState<Incident[]>([]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState("");
   const [busy, setBusy] = useState(false);
@@ -25,14 +15,10 @@ export function ChatInterface() {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!uid) return;
-    const unsubMsgs = subscribeMessages(uid, setMessages);
-    const unsubInc = subscribeIncidents(uid, setIncidents);
-    return () => {
-      unsubMsgs();
-      unsubInc();
-    };
-  }, [uid]);
+    getMessages()
+      .then(setMessages)
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -40,20 +26,16 @@ export function ChatInterface() {
 
   async function send(text: string) {
     const trimmed = text.trim();
-    if (!trimmed || !uid || busy) return;
+    if (!trimmed || busy) return;
 
     setInput("");
     setBusy(true);
 
-    const userMsg: Omit<ChatMessage, "id"> = {
-      role: "user",
-      content: trimmed,
-      createdAt: Date.now(),
-    };
-    await addMessage(uid, userMsg);
+    const userMsg: ChatMessage = { role: "user", content: trimmed, createdAt: Date.now() };
+    setMessages((prev) => [...prev, userMsg]);
+    addMessage(userMsg).catch(() => {});
 
-    // Build the history we send to the model (persisted messages + this turn).
-    const history = [...messages, { ...userMsg }].map((m) => ({
+    const history = [...messages, userMsg].map((m) => ({
       role: m.role,
       content: m.content,
     }));
@@ -63,13 +45,11 @@ export function ChatInterface() {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ messages: history, incidents }),
+        body: JSON.stringify({ messages: history }),
       });
-
       if (!res.body) throw new Error("No response stream.");
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
-
       for (;;) {
         const { done, value } = await reader.read();
         if (done) break;
@@ -81,20 +61,22 @@ export function ChatInterface() {
     }
 
     if (acc.trim()) {
-      await addMessage(uid, {
+      const assistantMsg: ChatMessage = {
         role: "assistant",
         content: acc.trim(),
         createdAt: Date.now(),
-      });
+      };
+      setMessages((prev) => [...prev, assistantMsg]);
+      addMessage(assistantMsg).catch(() => {});
     }
     setStreaming("");
     setBusy(false);
   }
 
   async function handleClear() {
-    if (!uid) return;
     if (!confirm("Clear this whole conversation? Incidents are kept.")) return;
-    await clearMessages(uid);
+    await clearMessages().catch(() => {});
+    setMessages([]);
   }
 
   const empty = messages.length === 0 && !streaming;
@@ -122,8 +104,8 @@ export function ChatInterface() {
           </div>
         )}
 
-        {messages.map((m) => (
-          <Bubble key={m.id} role={m.role} content={m.content} />
+        {messages.map((m, i) => (
+          <Bubble key={m.id ?? i} role={m.role} content={m.content} />
         ))}
         {streaming && <Bubble role="assistant" content={streaming} pending />}
       </div>
@@ -161,10 +143,7 @@ export function ChatInterface() {
         <div className="mt-2 flex items-center justify-between text-xs text-ink-muted">
           <span>{busy ? "Thinking…" : "Enter to send · Shift+Enter for a new line"}</span>
           {messages.length > 0 && (
-            <button
-              onClick={handleClear}
-              className="flex items-center gap-1 hover:text-clay"
-            >
+            <button onClick={handleClear} className="flex items-center gap-1 hover:text-clay">
               <Trash2 className="h-3.5 w-3.5" /> Clear conversation
             </button>
           )}
@@ -188,9 +167,7 @@ function Bubble({
     <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
       <div
         className={`max-w-[85%] whitespace-pre-wrap rounded-2xl px-4 py-3 leading-relaxed ${
-          isUser
-            ? "bg-ink text-paper"
-            : "border border-paper-edge bg-paper-card text-ink-soft"
+          isUser ? "bg-ink text-paper" : "border border-paper-edge bg-paper-card text-ink-soft"
         } ${pending ? "opacity-90" : ""}`}
       >
         {content}

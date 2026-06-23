@@ -8,22 +8,14 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import {
-  createUserWithEmailAndPassword,
-  onAuthStateChanged,
-  signInWithEmailAndPassword,
-  signOut as fbSignOut,
-  type User,
-} from "firebase/auth";
-import { ALLOWED_EMAIL, auth, firebaseConfigured } from "./firebase";
+
+// Auth runs entirely through our own server (same origin), so the browser never
+// needs to reach googleapis.com directly. The server holds the Firebase tokens
+// in an HTTP-only cookie.
 
 interface AuthState {
-  user: User | null;
+  email: string | null;
   loading: boolean;
-  configured: boolean;
-  /** Signed in AND on the allow-list (email matches). */
-  emailAllowed: boolean;
-  /** Cleared to use the app. */
   allowed: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
@@ -32,46 +24,51 @@ interface AuthState {
 
 const AuthContext = createContext<AuthState | null>(null);
 
-function emailMatches(email: string | null | undefined): boolean {
-  return Boolean(
-    email && (!ALLOWED_EMAIL || email.toLowerCase() === ALLOWED_EMAIL.toLowerCase()),
-  );
+async function postAuth(path: string, body: object): Promise<string> {
+  const res = await fetch(path, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data?.error || "Something went wrong. Try again.");
+  return data.email as string;
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [email, setEmail] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!firebaseConfigured) {
-      setLoading(false);
-      return;
-    }
-    return onAuthStateChanged(auth, (u) => {
-      setUser(u);
-      setLoading(false);
-    });
+    let active = true;
+    fetch("/api/auth/session")
+      .then((r) => r.json())
+      .then((d) => {
+        if (active) setEmail(d.email ?? null);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
   }, []);
 
-  const value = useMemo<AuthState>(() => {
-    const emailAllowed = emailMatches(user?.email);
-    return {
-      user,
+  const value = useMemo<AuthState>(
+    () => ({
+      email,
       loading,
-      configured: firebaseConfigured,
-      emailAllowed,
-      allowed: emailAllowed,
-      signIn: async (email, password) => {
-        await signInWithEmailAndPassword(auth, email.trim(), password);
-      },
-      signUp: async (email, password) => {
-        await createUserWithEmailAndPassword(auth, email.trim(), password);
-      },
+      allowed: Boolean(email),
+      signIn: async (e, p) => setEmail(await postAuth("/api/auth/login", { email: e, password: p })),
+      signUp: async (e, p) => setEmail(await postAuth("/api/auth/signup", { email: e, password: p })),
       signOut: async () => {
-        await fbSignOut(auth);
+        await fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
+        setEmail(null);
       },
-    };
-  }, [user, loading]);
+    }),
+    [email, loading],
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

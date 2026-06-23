@@ -5,23 +5,7 @@ import { ShieldHalf } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 
 export function AuthGate({ children }: { children: ReactNode }) {
-  const { loading, configured, allowed, emailAllowed, user } = useAuth();
-
-  if (!configured) {
-    return (
-      <Centered>
-        <Card>
-          <h1 className="font-serif text-2xl text-ink">Almost there</h1>
-          <p className="mt-3 text-ink-soft">
-            Firebase isn&apos;t configured yet. Copy{" "}
-            <code className="rounded bg-paper px-1.5 py-0.5 text-sm">.env.local.example</code>{" "}
-            to <code className="rounded bg-paper px-1.5 py-0.5 text-sm">.env.local</code> and fill
-            in your Firebase keys, then restart the dev server.
-          </p>
-        </Card>
-      </Centered>
-    );
-  }
+  const { loading, email } = useAuth();
 
   if (loading) {
     return (
@@ -31,7 +15,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
     );
   }
 
-  if (!user) {
+  if (!email) {
     return (
       <Centered>
         <SignInForm />
@@ -39,25 +23,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
     );
   }
 
-  if (!emailAllowed) {
-    return (
-      <Centered>
-        <Card>
-          <h1 className="font-serif text-2xl text-ink">Not this account</h1>
-          <p className="mt-3 text-ink-soft">
-            You&apos;re signed in as{" "}
-            <span className="font-medium text-ink">{user.email}</span>, which isn&apos;t the
-            account this space is for.
-          </p>
-          <SignOutLink />
-        </Card>
-      </Centered>
-    );
-  }
-
-  if (allowed) return <>{children}</>;
-
-  return null;
+  return <>{children}</>;
 }
 
 function SignInForm() {
@@ -76,7 +42,7 @@ function SignInForm() {
       if (mode === "signin") await signIn(email, password);
       else await signUp(email, password);
     } catch (err) {
-      setError(friendlyAuthError(err));
+      setError(err instanceof Error ? err.message : "Something went wrong. Try again.");
     } finally {
       setBusy(false);
     }
@@ -135,40 +101,6 @@ function SignInForm() {
       </button>
     </Card>
   );
-}
-
-function SignOutLink() {
-  const { signOut } = useAuth();
-  return (
-    <button
-      onClick={() => signOut().catch(() => {})}
-      className="mt-5 text-sm text-ink-muted transition hover:text-clay"
-    >
-      Sign out
-    </button>
-  );
-}
-
-function friendlyAuthError(err: unknown): string {
-  const code = (err as { code?: string })?.code ?? "";
-  switch (code) {
-    case "auth/invalid-credential":
-    case "auth/wrong-password":
-    case "auth/user-not-found":
-      return "Wrong email or password.";
-    case "auth/email-already-in-use":
-      return "That email already has an account — try signing in instead.";
-    case "auth/weak-password":
-      return "Password should be at least 6 characters.";
-    case "auth/invalid-email":
-      return "That doesn't look like a valid email.";
-    case "auth/too-many-requests":
-      return "Too many attempts. Wait a moment and try again.";
-    case "auth/network-request-failed":
-      return "Couldn't reach the auth server. Check your connection / ad-blocker and try again.";
-    default:
-      return err instanceof Error ? err.message : "Something went wrong. Try again.";
-  }
 }
 
 function Centered({ children }: { children: ReactNode }) {

@@ -1,5 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { buildSystemPrompt } from "@/lib/coaching-context";
+import { listCollection } from "@/lib/server/firebase-rest";
+import { getValidSession } from "@/lib/server/session";
 import type { ChatMessage, Incident } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -11,10 +13,17 @@ const MODEL = process.env.ANTHROPIC_MODEL || "claude-opus-4-8";
 
 interface ChatRequest {
   messages: Pick<ChatMessage, "role" | "content">[];
-  incidents?: Incident[];
 }
 
 export async function POST(req: Request) {
+  const session = await getValidSession();
+  if (!session) {
+    return new Response(JSON.stringify({ error: "Not signed in." }), {
+      status: 401,
+      headers: { "content-type": "application/json" },
+    });
+  }
+
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     return new Response(
@@ -44,7 +53,19 @@ export async function POST(req: Request) {
     });
   }
 
-  const system = buildSystemPrompt(body.incidents ?? []);
+  // Pull the incident log server-side so it feeds the coach's context.
+  let incidents: Incident[] = [];
+  try {
+    incidents = (await listCollection(
+      session.idToken,
+      session.uid,
+      "incidents",
+    )) as unknown as Incident[];
+  } catch {
+    incidents = [];
+  }
+
+  const system = buildSystemPrompt(incidents);
   const client = new Anthropic({ apiKey });
 
   const encoder = new TextEncoder();
@@ -54,9 +75,7 @@ export async function POST(req: Request) {
         const anthropicStream = client.messages.stream({
           model: MODEL,
           max_tokens: 4096,
-          // Adaptive thinking: the coach decides when to reason more deeply.
           thinking: { type: "adaptive" },
-          // Cache the large standing-context prompt across turns.
           system: [{ type: "text", text: system, cache_control: { type: "ephemeral" } }],
           messages,
         });
@@ -69,7 +88,6 @@ export async function POST(req: Request) {
         controller.close();
       } catch (err) {
         const message = err instanceof Error ? err.message : "Unknown error";
-        // Surface the error inline so the UI can show it in the message stream.
         controller.enqueue(encoder.encode(`\n\n[error] ${message}`));
         controller.close();
       }

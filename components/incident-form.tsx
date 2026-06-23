@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Plus } from "lucide-react";
-import { useAuth } from "@/lib/auth";
 import { addIncident } from "@/lib/firestore";
 import { EMPTY_INCIDENT } from "@/lib/types";
 
@@ -37,20 +36,26 @@ const FIELDS: { key: keyof typeof EMPTY_INCIDENT; label: string; hint: string }[
   },
 ];
 
-export function IncidentForm() {
-  const { user } = useAuth();
+export function IncidentForm({ onSaved }: { onSaved?: () => void }) {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ ...EMPTY_INCIDENT });
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!user?.uid) return;
     setSaving(true);
-    await addIncident(user.uid, form);
-    setForm({ ...EMPTY_INCIDENT });
-    setSaving(false);
-    setOpen(false);
+    setError("");
+    try {
+      await addIncident(form);
+      setForm({ ...EMPTY_INCIDENT });
+      setOpen(false);
+      onSaved?.();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't save.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   if (!open) {
@@ -97,6 +102,8 @@ export function IncidentForm() {
           </div>
         ))}
       </div>
+
+      {error && <p className="mt-3 text-sm text-clay">{error}</p>}
 
       <div className="mt-5 flex items-center gap-2">
         <button

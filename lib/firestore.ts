@@ -1,77 +1,54 @@
 "use client";
 
-import {
-  addDoc,
-  collection,
-  deleteDoc,
-  doc,
-  getDocs,
-  onSnapshot,
-  orderBy,
-  query,
-  type Unsubscribe,
-} from "firebase/firestore";
-import { db } from "./firebase";
+// Client data access goes through our own API routes (same origin). The server
+// talks to Firestore on the browser's behalf, so the browser never calls
+// googleapis.com directly.
 import type { ChatMessage, Incident } from "./types";
 
-// Data is scoped per user: users/{uid}/incidents and users/{uid}/messages.
-
-function incidentsCol(uid: string) {
-  return collection(db, "users", uid, "incidents");
-}
-function messagesCol(uid: string) {
-  return collection(db, "users", uid, "messages");
+async function getJSON<T>(url: string): Promise<T> {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Request failed (${res.status})`);
+  return (await res.json()) as T;
 }
 
 // ---- Incidents ----
 
-export function subscribeIncidents(
-  uid: string,
-  cb: (incidents: Incident[]) => void,
-): Unsubscribe {
-  const q = query(incidentsCol(uid), orderBy("createdAt", "desc"));
-  return onSnapshot(q, (snap) => {
-    cb(snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Incident, "id">) })));
-  });
-}
-
-export async function getIncidents(uid: string): Promise<Incident[]> {
-  const q = query(incidentsCol(uid), orderBy("createdAt", "desc"));
-  const snap = await getDocs(q);
-  return snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Incident, "id">) }));
+export async function getIncidents(): Promise<Incident[]> {
+  const { incidents } = await getJSON<{ incidents: Incident[] }>("/api/incidents");
+  return incidents;
 }
 
 export async function addIncident(
-  uid: string,
   incident: Omit<Incident, "id" | "createdAt">,
 ): Promise<void> {
-  await addDoc(incidentsCol(uid), { ...incident, createdAt: Date.now() });
+  const res = await fetch("/api/incidents", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(incident),
+  });
+  if (!res.ok) throw new Error("Couldn't save incident.");
 }
 
-export async function deleteIncident(uid: string, id: string): Promise<void> {
-  await deleteDoc(doc(db, "users", uid, "incidents", id));
+export async function deleteIncident(id: string): Promise<void> {
+  const res = await fetch(`/api/incidents/${encodeURIComponent(id)}`, { method: "DELETE" });
+  if (!res.ok) throw new Error("Couldn't delete incident.");
 }
 
 // ---- Chat messages ----
 
-export function subscribeMessages(
-  uid: string,
-  cb: (messages: ChatMessage[]) => void,
-): Unsubscribe {
-  const q = query(messagesCol(uid), orderBy("createdAt", "asc"));
-  return onSnapshot(q, (snap) => {
-    cb(snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<ChatMessage, "id">) })));
+export async function getMessages(): Promise<ChatMessage[]> {
+  const { messages } = await getJSON<{ messages: ChatMessage[] }>("/api/messages");
+  return messages;
+}
+
+export async function addMessage(message: Omit<ChatMessage, "id">): Promise<void> {
+  await fetch("/api/messages", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(message),
   });
 }
 
-export async function addMessage(
-  uid: string,
-  message: Omit<ChatMessage, "id">,
-): Promise<void> {
-  await addDoc(messagesCol(uid), message);
-}
-
-export async function clearMessages(uid: string): Promise<void> {
-  const snap = await getDocs(messagesCol(uid));
-  await Promise.all(snap.docs.map((d) => deleteDoc(d.ref)));
+export async function clearMessages(): Promise<void> {
+  await fetch("/api/messages", { method: "DELETE" });
 }

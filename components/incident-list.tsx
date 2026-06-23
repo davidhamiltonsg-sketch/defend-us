@@ -1,9 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { Trash2 } from "lucide-react";
-import { useAuth } from "@/lib/auth";
-import { deleteIncident, subscribeIncidents } from "@/lib/firestore";
+import { deleteIncident } from "@/lib/firestore";
 import type { Incident } from "@/lib/types";
 
 const ROWS: { key: keyof Incident; label: string }[] = [
@@ -16,19 +14,24 @@ const ROWS: { key: keyof Incident; label: string }[] = [
   { key: "openQuestion", label: "Open question" },
 ];
 
-export function IncidentList() {
-  const { user } = useAuth();
-  const [incidents, setIncidents] = useState<Incident[]>([]);
-
-  useEffect(() => {
-    if (!user?.uid) return;
-    return subscribeIncidents(user.uid, setIncidents);
-  }, [user?.uid]);
-
+export function IncidentList({
+  incidents,
+  loading,
+  onChanged,
+}: {
+  incidents: Incident[];
+  loading: boolean;
+  onChanged: () => void;
+}) {
   async function remove(id?: string) {
-    if (!id || !user?.uid) return;
+    if (!id) return;
     if (!confirm("Delete this incident?")) return;
-    await deleteIncident(user.uid, id);
+    await deleteIncident(id).catch(() => {});
+    onChanged();
+  }
+
+  if (loading) {
+    return <p className="text-ink-muted">Loading…</p>;
   }
 
   if (incidents.length === 0) {
