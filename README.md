@@ -13,7 +13,7 @@ Built from the operating context in `coaching-agent-prompt.md`. The coach is a [
 ## Stack
 
 - **Next.js 14** (App Router, TypeScript, Tailwind)
-- **Firebase** — Google Auth (single allow-listed account) + Firestore (incidents & chat history, scoped per user)
+- **Firebase** — Email/Password Auth (single allow-listed, email-verified account) + Firestore (incidents & chat history, scoped per user)
 - **Anthropic SDK** — `claude-opus-4-8` with adaptive thinking, streamed from a server route (`/api/chat`). The API key never reaches the browser.
 
 ## Setup
@@ -24,7 +24,7 @@ Built from the operating context in `coaching-agent-prompt.md`. The coach is a [
    ```
 
 2. **Create a Firebase project** (free Spark tier is fine)
-   - Enable **Authentication → Google** as a sign-in provider.
+   - Enable **Authentication → Email/Password** as a sign-in provider.
    - Create a **Firestore database**.
    - Project settings → *Your apps* → register a Web app → copy the config values.
 
@@ -60,7 +60,7 @@ The repo is connected for one-click deploys.
    - `ANTHROPIC_MODEL` *(optional)*
    - `NEXT_PUBLIC_FIREBASE_API_KEY`, `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`, `NEXT_PUBLIC_FIREBASE_PROJECT_ID`, `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`, `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`, `NEXT_PUBLIC_FIREBASE_APP_ID`
    - `NEXT_PUBLIC_ALLOWED_EMAIL`
-3. Deploy. Then in the **Firebase console → Authentication → Settings → Authorized domains**, add your Vercel domain (e.g. `defend-us.vercel.app`) so Google sign-in works in production.
+3. Deploy. Email/Password sign-in works on any domain out of the box (no Authorized-domains step needed — verification links use the Firebase `authDomain`).
 
 Every push to `main` triggers a new production deploy.
 

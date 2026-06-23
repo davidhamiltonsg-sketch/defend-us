@@ -9,28 +9,45 @@ import {
   type ReactNode,
 } from "react";
 import {
+  createUserWithEmailAndPassword,
   onAuthStateChanged,
-  signInWithPopup,
+  sendEmailVerification,
+  signInWithEmailAndPassword,
   signOut as fbSignOut,
   type User,
 } from "firebase/auth";
-import { ALLOWED_EMAIL, auth, firebaseConfigured, googleProvider } from "./firebase";
+import { ALLOWED_EMAIL, auth, firebaseConfigured } from "./firebase";
 
 interface AuthState {
   user: User | null;
   loading: boolean;
   configured: boolean;
-  /** Signed in AND on the allow-list. */
+  /** Signed in AND on the allow-list (email matches), regardless of verification. */
+  emailAllowed: boolean;
+  /** Email has been verified (required by the Firestore rules). */
+  verified: boolean;
+  /** Fully cleared to use the app: allow-listed email + verified. */
   allowed: boolean;
-  signIn: () => Promise<void>;
+  signIn: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string) => Promise<void>;
+  resendVerification: () => Promise<void>;
+  refreshUser: () => Promise<void>;
   signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthState | null>(null);
 
+function emailMatches(email: string | null | undefined): boolean {
+  return Boolean(
+    email && (!ALLOWED_EMAIL || email.toLowerCase() === ALLOWED_EMAIL.toLowerCase()),
+  );
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  // Bumped on refreshUser() to recompute verification after the user verifies.
+  const [tick, setTick] = useState(0);
 
   useEffect(() => {
     if (!firebaseConfigured) {
@@ -44,23 +61,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo<AuthState>(() => {
-    const allowed = Boolean(
-      user?.email &&
-        (!ALLOWED_EMAIL || user.email.toLowerCase() === ALLOWED_EMAIL.toLowerCase()),
-    );
+    const emailAllowed = emailMatches(user?.email);
+    const verified = Boolean(user?.emailVerified);
     return {
       user,
       loading,
       configured: firebaseConfigured,
-      allowed,
-      signIn: async () => {
-        await signInWithPopup(auth, googleProvider);
+      emailAllowed,
+      verified,
+      allowed: emailAllowed && verified,
+      signIn: async (email, password) => {
+        await signInWithEmailAndPassword(auth, email.trim(), password);
+      },
+      signUp: async (email, password) => {
+        const cred = await createUserWithEmailAndPassword(auth, email.trim(), password);
+        await sendEmailVerification(cred.user);
+      },
+      resendVerification: async () => {
+        if (auth.currentUser) await sendEmailVerification(auth.currentUser);
+      },
+      refreshUser: async () => {
+        if (auth.currentUser) {
+          await auth.currentUser.reload();
+          setUser(auth.currentUser);
+          setTick((t) => t + 1);
+        }
       },
       signOut: async () => {
         await fbSignOut(auth);
       },
     };
-  }, [user, loading]);
+    // tick is intentionally a dependency so consumers re-read verification after reload.
+  }, [user, loading, tick]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

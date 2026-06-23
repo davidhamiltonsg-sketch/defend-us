@@ -1,7 +1,7 @@
 "use client";
 
 import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider, type Auth } from "firebase/auth";
+import { getAuth, type Auth } from "firebase/auth";
 import { getFirestore, type Firestore } from "firebase/firestore";
 
 const firebaseConfig = {
@@ -30,6 +30,5 @@ const app: FirebaseApp | undefined = firebaseConfigured
 // (see lib/auth.tsx and lib/firestore.ts), so the cast is safe in practice.
 export const auth: Auth = app ? getAuth(app) : (undefined as unknown as Auth);
 export const db: Firestore = app ? getFirestore(app) : (undefined as unknown as Firestore);
-export const googleProvider = new GoogleAuthProvider();
 
 export const ALLOWED_EMAIL = process.env.NEXT_PUBLIC_ALLOWED_EMAIL ?? "";
