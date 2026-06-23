@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { MailCheck, ShieldHalf } from "lucide-react";
+import { ShieldHalf } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 
 export function AuthGate({ children }: { children: ReactNode }) {
-  const { loading, configured, allowed, emailAllowed, verified, user } = useAuth();
+  const { loading, configured, allowed, emailAllowed, user } = useAuth();
 
   if (!configured) {
     return (
@@ -51,14 +51,6 @@ export function AuthGate({ children }: { children: ReactNode }) {
           </p>
           <SignOutLink />
         </Card>
-      </Centered>
-    );
-  }
-
-  if (!verified) {
-    return (
-      <Centered>
-        <VerifyNotice email={user.email ?? ""} />
       </Centered>
     );
   }
@@ -145,49 +137,6 @@ function SignInForm() {
   );
 }
 
-function VerifyNotice({ email }: { email: string }) {
-  const { resendVerification, refreshUser, signOut } = useAuth();
-  const [status, setStatus] = useState("");
-
-  return (
-    <Card>
-      <div className="flex items-center gap-3 text-clay">
-        <MailCheck className="h-7 w-7" />
-        <span className="font-serif text-2xl tracking-tight text-ink">Verify your email</span>
-      </div>
-      <p className="mt-4 text-ink-soft">
-        We sent a verification link to{" "}
-        <span className="font-medium text-ink">{email}</span>. Click it, then come back and
-        continue. Verification is required before the app can read or write your data.
-      </p>
-      {status && <p className="mt-3 text-sm text-sage">{status}</p>}
-      <div className="mt-6 space-y-2">
-        <button
-          onClick={() => refreshUser()}
-          className="w-full rounded-lg bg-ink px-4 py-3 font-medium text-paper transition hover:bg-ink-soft"
-        >
-          I&apos;ve verified — continue
-        </button>
-        <button
-          onClick={async () => {
-            await resendVerification();
-            setStatus("Verification email re-sent.");
-          }}
-          className="w-full rounded-lg border border-paper-edge px-4 py-2.5 text-ink-soft transition hover:border-clay-soft hover:text-ink"
-        >
-          Resend the email
-        </button>
-      </div>
-      <button
-        onClick={() => signOut()}
-        className="mt-4 text-sm text-ink-muted transition hover:text-clay"
-      >
-        Sign out
-      </button>
-    </Card>
-  );
-}
-
 function SignOutLink() {
   const { signOut } = useAuth();
   return (
@@ -215,6 +164,8 @@ function friendlyAuthError(err: unknown): string {
       return "That doesn't look like a valid email.";
     case "auth/too-many-requests":
       return "Too many attempts. Wait a moment and try again.";
+    case "auth/network-request-failed":
+      return "Couldn't reach the auth server. Check your connection / ad-blocker and try again.";
     default:
       return err instanceof Error ? err.message : "Something went wrong. Try again.";
   }
