@@ -2,12 +2,17 @@ import { DashboardCards } from "@/components/dashboard-cards";
 
 export default function DashboardPage() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-7 animate-rise">
       <header>
-        <h1 className="font-serif text-3xl tracking-tight text-ink">Standing context</h1>
-        <p className="mt-1 text-ink-muted">
-          The frame the coach holds in every conversation — what works, what doesn&apos;t, and the
-          one question it all turns on.
+        <p className="font-mono text-[11px] uppercase tracking-eyebrow text-smoke">
+          Standing context
+        </p>
+        <h1 className="mt-2 font-serif text-4xl tracking-tight text-bone">
+          What the coach holds
+        </h1>
+        <p className="mt-2 max-w-2xl text-ash">
+          The frame carried into every conversation — what works, what doesn&apos;t, and the one
+          question it all turns on.
         </p>
       </header>
       <DashboardCards />

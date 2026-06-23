@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Send, Trash2 } from "lucide-react";
+import { ArrowUp, Eraser } from "lucide-react";
 import { addMessage, clearMessages, getMessages } from "@/lib/firestore";
 import type { ChatMessage } from "@/lib/types";
 import { STARTER_PROMPTS } from "@/lib/coaching-context";
@@ -35,10 +35,7 @@ export function ChatInterface() {
     setMessages((prev) => [...prev, userMsg]);
     addMessage(userMsg).catch(() => {});
 
-    const history = [...messages, userMsg].map((m) => ({
-      role: m.role,
-      content: m.content,
-    }));
+    const history = [...messages, userMsg].map((m) => ({ role: m.role, content: m.content }));
 
     let acc = "";
     try {
@@ -74,7 +71,7 @@ export function ChatInterface() {
   }
 
   async function handleClear() {
-    if (!confirm("Clear this whole conversation? Incidents are kept.")) return;
+    if (!confirm("Clear this conversation? Your incident log is kept.")) return;
     await clearMessages().catch(() => {});
     setMessages([]);
   }
@@ -82,21 +79,27 @@ export function ChatInterface() {
   const empty = messages.length === 0 && !streaming;
 
   return (
-    <div className="flex h-[calc(100vh-8rem)] flex-col">
-      <div ref={scrollRef} className="flex-1 space-y-5 overflow-y-auto pb-4">
+    <div className="flex h-[calc(100vh-9rem)] flex-col">
+      <div ref={scrollRef} className="flex-1 space-y-7 overflow-y-auto pb-6">
         {empty && (
-          <div className="mx-auto max-w-xl pt-10 text-center">
-            <p className="font-serif text-2xl text-ink">What&apos;s on your mind?</p>
-            <p className="mt-2 text-ink-muted">
-              A place to think out loud, pressure-test a reaction, or prep a hard conversation.
+          <div className="mx-auto max-w-2xl pt-12 text-center animate-rise">
+            <p className="font-mono text-[11px] uppercase tracking-eyebrow text-smoke">
+              A coach, not a mirror
             </p>
-            <div className="mt-6 grid gap-2 sm:grid-cols-2">
+            <p className="mt-3 font-serif text-3xl text-bone">What&apos;s on your mind?</p>
+            <p className="mt-2 text-ash">
+              Think out loud, pressure-test a reaction, or prep a hard conversation.
+            </p>
+            <div className="mt-7 grid gap-2.5 sm:grid-cols-2">
               {STARTER_PROMPTS.map((p) => (
                 <button
                   key={p}
                   onClick={() => send(p)}
-                  className="rounded-xl border border-paper-edge bg-paper-card p-3 text-left text-sm text-ink-soft transition hover:border-clay-soft hover:text-ink"
+                  className="group rounded-2xl border border-night-hair bg-night-raised p-4 text-left text-sm leading-relaxed text-ash transition hover:border-ember/40 hover:text-bone"
                 >
+                  <span className="mr-2 text-ember opacity-60 transition group-hover:opacity-100">
+                    →
+                  </span>
                   {p}
                 </button>
               ))}
@@ -105,18 +108,18 @@ export function ChatInterface() {
         )}
 
         {messages.map((m, i) => (
-          <Bubble key={m.id ?? i} role={m.role} content={m.content} />
+          <Turn key={m.id ?? i} role={m.role} content={m.content} />
         ))}
-        {streaming && <Bubble role="assistant" content={streaming} pending />}
+        {streaming && <Turn role="assistant" content={streaming} pending />}
       </div>
 
-      <div className="border-t border-paper-edge pt-3">
+      <div className="border-t border-night-hair pt-4">
         <form
           onSubmit={(e) => {
             e.preventDefault();
             send(input);
           }}
-          className="flex items-end gap-2"
+          className="flex items-end gap-2 rounded-2xl border border-night-hair bg-night-raised p-2 transition focus-within:border-ember/50"
         >
           <textarea
             value={input}
@@ -129,22 +132,22 @@ export function ChatInterface() {
             }}
             rows={1}
             placeholder="Type what happened, or what you're weighing…"
-            className="max-h-40 flex-1 resize-none rounded-xl border border-paper-edge bg-paper-card px-4 py-3 text-ink outline-none focus:border-clay-soft"
+            className="max-h-44 flex-1 resize-none bg-transparent px-3 py-2.5 text-bone placeholder:text-smoke/70 outline-none"
           />
           <button
             type="submit"
             disabled={busy || !input.trim()}
-            className="flex h-12 w-12 items-center justify-center rounded-xl bg-ink text-paper transition hover:bg-ink-soft disabled:opacity-40"
+            className="flex h-10 w-10 items-center justify-center rounded-xl bg-ember text-night transition hover:bg-ember-soft disabled:opacity-30"
             aria-label="Send"
           >
-            <Send className="h-5 w-5" />
+            <ArrowUp className="h-5 w-5" strokeWidth={2.2} />
           </button>
         </form>
-        <div className="mt-2 flex items-center justify-between text-xs text-ink-muted">
-          <span>{busy ? "Thinking…" : "Enter to send · Shift+Enter for a new line"}</span>
+        <div className="mt-2.5 flex items-center justify-between px-1 font-mono text-[10px] uppercase tracking-eyebrow text-smoke">
+          <span>{busy ? "thinking…" : "enter to send · shift+enter for a line"}</span>
           {messages.length > 0 && (
-            <button onClick={handleClear} className="flex items-center gap-1 hover:text-clay">
-              <Trash2 className="h-3.5 w-3.5" /> Clear conversation
+            <button onClick={handleClear} className="flex items-center gap-1 transition hover:text-ember">
+              <Eraser className="h-3 w-3" /> clear
             </button>
           )}
         </div>
@@ -153,7 +156,7 @@ export function ChatInterface() {
   );
 }
 
-function Bubble({
+function Turn({
   role,
   content,
   pending,
@@ -162,16 +165,26 @@ function Bubble({
   content: string;
   pending?: boolean;
 }) {
-  const isUser = role === "user";
+  if (role === "user") {
+    return (
+      <div className="flex justify-end animate-rise">
+        <div className="max-w-[80%] whitespace-pre-wrap rounded-2xl rounded-br-md border border-night-hair bg-night-input px-4 py-2.5 leading-relaxed text-bone">
+          {content}
+        </div>
+      </div>
+    );
+  }
+  // The coach speaks as correspondence: serif prose with an ember margin-rule.
   return (
-    <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
-      <div
-        className={`max-w-[85%] whitespace-pre-wrap rounded-2xl px-4 py-3 leading-relaxed ${
-          isUser ? "bg-ink text-paper" : "border border-paper-edge bg-paper-card text-ink-soft"
-        } ${pending ? "opacity-90" : ""}`}
-      >
+    <div className="animate-rise border-l-2 border-ember/45 pl-5">
+      <p className="mb-1.5 font-mono text-[10px] uppercase tracking-eyebrow text-ember/70">
+        Coach
+      </p>
+      <div className="max-w-2xl whitespace-pre-wrap font-serif text-[17px] leading-relaxed text-bone/95">
         {content}
-        {pending && <span className="ml-0.5 inline-block animate-pulse">▍</span>}
+        {pending && (
+          <span className="ml-0.5 inline-block h-4 w-[2px] translate-y-0.5 bg-ember animate-glowpulse" />
+        )}
       </div>
     </div>
   );

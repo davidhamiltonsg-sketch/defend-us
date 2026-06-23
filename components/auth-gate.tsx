@@ -10,7 +10,9 @@ export function AuthGate({ children }: { children: ReactNode }) {
   if (loading) {
     return (
       <Centered>
-        <p className="text-ink-muted">Loading…</p>
+        <p className="font-mono text-xs uppercase tracking-eyebrow text-smoke animate-glowpulse">
+          opening the room…
+        </p>
       </Centered>
     );
   }
@@ -49,70 +51,103 @@ function SignInForm() {
   }
 
   return (
-    <Card>
-      <div className="flex items-center gap-3 text-clay">
-        <ShieldHalf className="h-7 w-7" />
-        <span className="font-serif text-3xl tracking-tight text-ink">defend-us</span>
-      </div>
-      <p className="mt-4 text-ink-soft">
-        A private space to think clearly about your relationship — between the moments.
-      </p>
+    <div className="relative w-full max-w-md animate-rise">
+      {/* lamp glow behind the card */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -inset-x-8 -top-16 h-40 rounded-full bg-ember/20 blur-3xl"
+      />
+      <div className="relative rounded-3xl border border-night-hair bg-night-raised p-9 shadow-lamp">
+        <p className="font-mono text-[11px] uppercase tracking-eyebrow text-smoke">
+          Private · between the moments
+        </p>
+        <div className="mt-4 flex items-center gap-3">
+          <ShieldHalf className="h-7 w-7 text-ember" strokeWidth={1.6} />
+          <span className="font-serif text-4xl tracking-tight text-bone">defend-us</span>
+        </div>
+        <p className="mt-3 leading-relaxed text-ash">
+          A place to think out loud, pressure-test a reaction, and stay honest — before the
+          next hard conversation.
+        </p>
 
-      <form onSubmit={submit} className="mt-6 space-y-3">
-        <input
-          type="email"
-          autoComplete="email"
-          required
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="Email"
-          className="w-full rounded-lg border border-paper-edge bg-paper px-3 py-2.5 text-ink outline-none focus:border-clay-soft"
-        />
-        <input
-          type="password"
-          autoComplete={mode === "signin" ? "current-password" : "new-password"}
-          required
-          minLength={6}
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="Password"
-          className="w-full rounded-lg border border-paper-edge bg-paper px-3 py-2.5 text-ink outline-none focus:border-clay-soft"
-        />
-        {error && <p className="text-sm text-clay">{error}</p>}
+        <form onSubmit={submit} className="mt-7 space-y-3">
+          <Field
+            type="email"
+            autoComplete="email"
+            value={email}
+            onChange={setEmail}
+            placeholder="you@email.com"
+            label="Email"
+          />
+          <Field
+            type="password"
+            autoComplete={mode === "signin" ? "current-password" : "new-password"}
+            value={password}
+            onChange={setPassword}
+            placeholder="••••••••"
+            label="Password"
+            minLength={6}
+          />
+          {error && <p className="text-sm text-[#E59A8C]">{error}</p>}
+          <button
+            type="submit"
+            disabled={busy}
+            className="mt-1 w-full rounded-xl bg-ember px-4 py-3 font-medium text-night shadow-glow transition hover:bg-ember-soft disabled:opacity-50"
+          >
+            {busy ? "One moment…" : mode === "signin" ? "Sign in" : "Create account"}
+          </button>
+        </form>
+
         <button
-          type="submit"
-          disabled={busy}
-          className="w-full rounded-lg bg-ink px-4 py-3 font-medium text-paper transition hover:bg-ink-soft disabled:opacity-50"
+          onClick={() => {
+            setMode(mode === "signin" ? "signup" : "signin");
+            setError("");
+          }}
+          className="mt-5 font-mono text-[11px] uppercase tracking-eyebrow text-smoke transition hover:text-ember"
         >
-          {busy ? "…" : mode === "signin" ? "Sign in" : "Create account"}
+          {mode === "signin" ? "First time → create your account" : "← Back to sign in"}
         </button>
-      </form>
+      </div>
+    </div>
+  );
+}
 
-      <button
-        onClick={() => {
-          setMode(mode === "signin" ? "signup" : "signin");
-          setError("");
-        }}
-        className="mt-4 text-sm text-ink-muted transition hover:text-clay"
-      >
-        {mode === "signin"
-          ? "First time? Create your account"
-          : "Already have an account? Sign in"}
-      </button>
-    </Card>
+function Field({
+  label,
+  type,
+  value,
+  onChange,
+  placeholder,
+  autoComplete,
+  minLength,
+}: {
+  label: string;
+  type: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder: string;
+  autoComplete: string;
+  minLength?: number;
+}) {
+  return (
+    <label className="block">
+      <span className="mb-1.5 block font-mono text-[10px] uppercase tracking-eyebrow text-smoke">
+        {label}
+      </span>
+      <input
+        type={type}
+        required
+        minLength={minLength}
+        autoComplete={autoComplete}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="w-full rounded-xl border border-night-hair bg-night-input px-4 py-3 text-bone placeholder:text-smoke/60 outline-none transition focus:border-ember/60 focus:ring-4 focus:ring-ember/10"
+      />
+    </label>
   );
 }
 
 function Centered({ children }: { children: ReactNode }) {
-  return (
-    <div className="flex min-h-screen items-center justify-center px-4">{children}</div>
-  );
-}
-
-function Card({ children }: { children: ReactNode }) {
-  return (
-    <div className="w-full max-w-md rounded-2xl border border-paper-edge bg-paper-card p-8 shadow-sm">
-      {children}
-    </div>
-  );
+  return <div className="flex min-h-screen items-center justify-center px-5">{children}</div>;
 }

@@ -15,7 +15,7 @@ const FIELDS: { key: keyof typeof EMPTY_INCIDENT; label: string; hint: string }[
   {
     key: "davidDidSaid",
     label: "What you did and said",
-    hint: "Honestly — including tone, timing, withdrawal, anything you're not proud of.",
+    hint: "Honestly — tone, timing, withdrawal, anything you're not proud of.",
   },
   {
     key: "damiDidSaid",
@@ -62,9 +62,9 @@ export function IncidentForm({ onSaved }: { onSaved?: () => void }) {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="flex items-center gap-2 rounded-xl bg-ink px-4 py-2.5 font-medium text-paper transition hover:bg-ink-soft"
+        className="flex items-center gap-2 rounded-xl bg-ember px-4 py-2.5 font-medium text-night shadow-glow transition hover:bg-ember-soft"
       >
-        <Plus className="h-4 w-4" /> Log an incident
+        <Plus className="h-4 w-4" strokeWidth={2.2} /> Log an incident
       </button>
     );
   }
@@ -72,51 +72,52 @@ export function IncidentForm({ onSaved }: { onSaved?: () => void }) {
   return (
     <form
       onSubmit={submit}
-      className="rounded-2xl border border-paper-edge bg-paper-card p-5 shadow-sm"
+      className="w-full animate-rise rounded-2xl border border-night-hair bg-night-raised p-6 shadow-lamp"
     >
-      <h2 className="font-serif text-xl text-ink">New incident</h2>
-      <p className="mt-1 text-sm text-ink-muted">
-        Structured entries feed straight into the coach&apos;s context.
-      </p>
+      <p className="font-mono text-[11px] uppercase tracking-eyebrow text-ember">New entry</p>
+      <h2 className="mt-1 font-serif text-2xl text-bone">Log an incident</h2>
+      <p className="mt-1 text-sm text-ash">Structured entries feed straight into the coach&apos;s context.</p>
 
-      <div className="mt-4 space-y-4">
+      <div className="mt-5 space-y-4">
         {FIELDS.map(({ key, label, hint }) => (
           <div key={key}>
-            <label className="block text-sm font-medium text-ink">{label}</label>
-            {hint && <p className="text-xs text-ink-muted">{hint}</p>}
+            <label className="block font-mono text-[10px] uppercase tracking-eyebrow text-smoke">
+              {label}
+            </label>
+            {hint && <p className="mt-0.5 text-xs text-smoke">{hint}</p>}
             {key === "date" ? (
               <input
                 value={form[key]}
                 onChange={(e) => setForm({ ...form, [key]: e.target.value })}
                 placeholder="e.g. 2026-06-24, or 'last Tuesday'"
-                className="mt-1 w-full rounded-lg border border-paper-edge bg-paper px-3 py-2 text-ink outline-none focus:border-clay-soft"
+                className="mt-1.5 w-full rounded-lg border border-night-hair bg-night-input px-3 py-2 text-bone placeholder:text-smoke/60 outline-none transition focus:border-ember/60 focus:ring-4 focus:ring-ember/10"
               />
             ) : (
               <textarea
                 value={form[key]}
                 onChange={(e) => setForm({ ...form, [key]: e.target.value })}
                 rows={2}
-                className="mt-1 w-full resize-y rounded-lg border border-paper-edge bg-paper px-3 py-2 text-ink outline-none focus:border-clay-soft"
+                className="mt-1.5 w-full resize-y rounded-lg border border-night-hair bg-night-input px-3 py-2 text-bone outline-none transition focus:border-ember/60 focus:ring-4 focus:ring-ember/10"
               />
             )}
           </div>
         ))}
       </div>
 
-      {error && <p className="mt-3 text-sm text-clay">{error}</p>}
+      {error && <p className="mt-3 text-sm text-[#E59A8C]">{error}</p>}
 
-      <div className="mt-5 flex items-center gap-2">
+      <div className="mt-5 flex items-center gap-3">
         <button
           type="submit"
           disabled={saving}
-          className="rounded-xl bg-clay px-4 py-2.5 font-medium text-white transition hover:bg-clay/90 disabled:opacity-50"
+          className="rounded-xl bg-ember px-4 py-2.5 font-medium text-night shadow-glow transition hover:bg-ember-soft disabled:opacity-50"
         >
-          {saving ? "Saving…" : "Save incident"}
+          {saving ? "Saving…" : "Save entry"}
         </button>
         <button
           type="button"
           onClick={() => setOpen(false)}
-          className="rounded-xl px-4 py-2.5 text-ink-muted transition hover:text-ink"
+          className="font-mono text-[11px] uppercase tracking-eyebrow text-smoke transition hover:text-ash"
         >
           Cancel
         </button>

@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: light;
+  color-scheme: dark;
 }
 
 html,
@@ -12,21 +12,49 @@ body {
 }
 
 body {
-  background-color: theme("colors.paper.DEFAULT");
-  color: theme("colors.ink.DEFAULT");
+  background-color: #15120e;
+  /* A single warm lamp from above, a cool wash of dusk from below. */
+  background-image:
+    radial-gradient(115% 75% at 50% -12%, rgba(224, 162, 74, 0.1), transparent 58%),
+    radial-gradient(90% 55% at 50% 118%, rgba(148, 160, 198, 0.06), transparent 60%);
+  background-attachment: fixed;
+  color: #ece6da;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
-/* Calmer scrollbars for the chat column */
+/* Fraunces reads best with a touch more optical character. */
+.font-serif {
+  font-optical-sizing: auto;
+}
+
+::selection {
+  background: rgba(224, 162, 74, 0.28);
+  color: #fff;
+}
+
 * {
   scrollbar-width: thin;
-  scrollbar-color: theme("colors.paper.edge") transparent;
+  scrollbar-color: #2e2820 transparent;
 }
 *::-webkit-scrollbar {
-  width: 8px;
+  width: 9px;
+  height: 9px;
 }
 *::-webkit-scrollbar-thumb {
-  background-color: theme("colors.paper.edge");
+  background-color: #2e2820;
   border-radius: 9999px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background-color: #3a332a;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
 }

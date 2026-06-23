@@ -14,7 +14,7 @@ export function IncidentsClient() {
     try {
       setIncidents(await getIncidents());
     } catch {
-      // leave the current list in place on a transient error
+      // keep the current list on a transient error
     } finally {
       setLoading(false);
     }
@@ -25,11 +25,14 @@ export function IncidentsClient() {
   }, [refresh]);
 
   return (
-    <div className="space-y-6">
-      <header className="flex flex-wrap items-start justify-between gap-4">
+    <div className="space-y-7 animate-rise">
+      <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="font-serif text-3xl tracking-tight text-ink">Incident log</h1>
-          <p className="mt-1 text-ink-muted">
+          <p className="font-mono text-[11px] uppercase tracking-eyebrow text-smoke">
+            The record
+          </p>
+          <h1 className="mt-2 font-serif text-4xl tracking-tight text-bone">Incident log</h1>
+          <p className="mt-2 max-w-xl text-ash">
             The specifics, in sequence. Theory without incident produces horoscopes.
           </p>
         </div>
