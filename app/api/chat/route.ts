@@ -3,7 +3,9 @@ import { buildSystemPrompt } from "@/lib/coaching-context";
 import type { ChatMessage, Incident } from "@/lib/types";
 
 export const runtime = "nodejs";
-export const maxDuration = 300; // coaching turns can run long; allow up to 5 min
+// 60s is the max on Vercel's Hobby plan; raise to 300 if deploying on Pro.
+// Responses stream, so the connection stays alive while the coach is thinking.
+export const maxDuration = 60;
 
 const MODEL = process.env.ANTHROPIC_MODEL || "claude-opus-4-8";
 

@@ -50,6 +50,22 @@ Built from the operating context in `coaching-agent-prompt.md`. The coach is a [
    ```
    Open http://localhost:3000 and sign in.
 
+## Deploy to Vercel
+
+The repo is connected for one-click deploys.
+
+1. Go to [vercel.com/new](https://vercel.com/new) and **import** `davidhamiltonsg-sketch/defend-us`. Vercel auto-detects Next.js — no build settings to change.
+2. Before the first deploy, add the **Environment Variables** (Project → Settings → Environment Variables), the same set as `.env.local`:
+   - `ANTHROPIC_API_KEY` *(keep this one secret — it's server-only)*
+   - `ANTHROPIC_MODEL` *(optional)*
+   - `NEXT_PUBLIC_FIREBASE_API_KEY`, `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`, `NEXT_PUBLIC_FIREBASE_PROJECT_ID`, `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`, `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`, `NEXT_PUBLIC_FIREBASE_APP_ID`
+   - `NEXT_PUBLIC_ALLOWED_EMAIL`
+3. Deploy. Then in the **Firebase console → Authentication → Settings → Authorized domains**, add your Vercel domain (e.g. `defend-us.vercel.app`) so Google sign-in works in production.
+
+Every push to `main` triggers a new production deploy.
+
+> The chat route sets `maxDuration = 60` (Vercel Hobby plan limit). On a Pro plan you can raise it in `app/api/chat/route.ts` for longer coaching turns.
+
 ## Notes
 
 - This is a supplement, not a substitute for David's own judgment, direct conversation with Dami, or a licensed therapist/couples counsellor. The coach is briefed never to diagnose, predict the relationship's future, or instruct David to stay or leave.
