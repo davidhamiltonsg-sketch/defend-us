@@ -1,0 +1,18 @@
+rules_version = '2';
+
+// Lock everything to a single owner account, and only let a signed-in user
+// touch their own data. Replace the email below if the allow-listed account changes.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isOwner() {
+      return request.auth != null
+        && request.auth.token.email == 'davidhamiltonsg@gmail.com'
+        && request.auth.token.email_verified == true;
+    }
+
+    match /users/{uid}/{document=**} {
+      allow read, write: if isOwner() && request.auth.uid == uid;
+    }
+  }
+}

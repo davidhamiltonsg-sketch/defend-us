@@ -1,0 +1,32 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background-color: theme("colors.paper.DEFAULT");
+  color: theme("colors.ink.DEFAULT");
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Calmer scrollbars for the chat column */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: theme("colors.paper.edge") transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background-color: theme("colors.paper.edge");
+  border-radius: 9999px;
+}
