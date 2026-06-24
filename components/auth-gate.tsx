@@ -52,22 +52,30 @@ function SignInForm() {
 
   return (
     <div className="relative w-full max-w-md animate-rise">
-      {/* lamp glow behind the card */}
+      {/* the lamp — a glow that slowly breathes */}
       <div
         aria-hidden
-        className="pointer-events-none absolute -inset-x-8 -top-16 h-40 rounded-full bg-ember/20 blur-3xl"
+        className="pointer-events-none absolute -inset-x-10 -top-24 h-48 rounded-full bg-ember/25 blur-[80px] animate-breathe"
       />
-      <div className="relative rounded-3xl border border-night-hair bg-night-raised p-9 shadow-lamp">
+      <div className="relative rounded-3xl border border-night-hair bg-night-raised/90 p-9 shadow-lamp backdrop-blur-sm">
         <p className="font-mono text-[11px] uppercase tracking-eyebrow text-smoke">
           Private · between the moments
         </p>
         <div className="mt-4 flex items-center gap-3">
-          <ShieldHalf className="h-7 w-7 text-ember" strokeWidth={1.6} />
-          <span className="font-serif text-4xl tracking-tight text-bone">defend-us</span>
+          <span className="relative flex h-9 w-9 items-center justify-center rounded-full border border-ember/40">
+            <span
+              aria-hidden
+              className="absolute inset-0 rounded-full bg-ember/20 blur-md animate-breathe"
+            />
+            <ShieldHalf className="relative h-5 w-5 text-ember" strokeWidth={1.7} />
+          </span>
+          <span className="font-serif text-[40px] leading-none tracking-tight text-bone">
+            defend-us
+          </span>
         </div>
-        <p className="mt-3 leading-relaxed text-ash">
-          A place to think out loud, pressure-test a reaction, and stay honest — before the
-          next hard conversation.
+        <p className="mt-4 border-l border-ember/40 pl-4 font-serif text-[17px] italic leading-relaxed text-ash">
+          A coach, not a mirror. Somewhere to think out loud, pressure-test a reaction, and stay
+          honest — before the next hard conversation.
         </p>
 
         <form onSubmit={submit} className="mt-7 space-y-3">

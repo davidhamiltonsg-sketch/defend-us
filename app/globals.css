@@ -23,9 +23,42 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-/* Fraunces reads best with a touch more optical character. */
+/* Filmic grain — gives the dark room depth instead of flat black. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0.045;
+  mix-blend-mode: soft-light;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Vignette — the room falls off at the edges. */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+  background: radial-gradient(125% 115% at 50% 38%, transparent 62%, rgba(0, 0, 0, 0.5) 100%);
+}
+
 .font-serif {
   font-optical-sizing: auto;
+}
+
+/* The coach writes letters: an illuminated initial in ember italic. */
+.coach-letter::first-letter {
+  float: left;
+  margin: 0.04em 0.09em 0 0;
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-style: italic;
+  font-weight: 500;
+  font-size: 3.1em;
+  line-height: 0.78;
+  color: #e0a24a;
 }
 
 ::selection {

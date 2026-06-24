@@ -95,7 +95,7 @@ export function ChatInterface() {
                 <button
                   key={p}
                   onClick={() => send(p)}
-                  className="group rounded-2xl border border-night-hair bg-night-raised p-4 text-left text-sm leading-relaxed text-ash transition hover:border-ember/40 hover:text-bone"
+                  className="group rounded-2xl border border-night-hair bg-night-raised p-4 text-left text-sm leading-relaxed text-ash transition duration-300 hover:-translate-y-0.5 hover:border-ember/40 hover:text-bone hover:shadow-glow"
                 >
                   <span className="mr-2 text-ember opacity-60 transition group-hover:opacity-100">
                     →
@@ -180,7 +180,7 @@ function Turn({
       <p className="mb-1.5 font-mono text-[10px] uppercase tracking-eyebrow text-ember/70">
         Coach
       </p>
-      <div className="max-w-2xl whitespace-pre-wrap font-serif text-[17px] leading-relaxed text-bone/95">
+      <div className="coach-letter max-w-2xl whitespace-pre-wrap font-serif text-[17px] leading-relaxed text-bone/95">
         {content}
         {pending && (
           <span className="ml-0.5 inline-block h-4 w-[2px] translate-y-0.5 bg-ember animate-glowpulse" />

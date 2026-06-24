@@ -53,10 +53,15 @@ const config: Config = {
           "0%, 100%": { opacity: "0.5" },
           "50%": { opacity: "1" },
         },
+        breathe: {
+          "0%, 100%": { opacity: "0.45", transform: "scale(1)" },
+          "50%": { opacity: "0.8", transform: "scale(1.08)" },
+        },
       },
       animation: {
-        rise: "rise 0.5s cubic-bezier(0.2, 0.6, 0.2, 1) both",
+        rise: "rise 0.6s cubic-bezier(0.2, 0.6, 0.2, 1) both",
         glowpulse: "glowpulse 1.4s ease-in-out infinite",
+        breathe: "breathe 7s ease-in-out infinite",
       },
     },
   },
