@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, MessageCircle, NotebookPen, ShieldHalf } from "lucide-react";
+import { LayoutDashboard, MessageCircle, NotebookPen, Settings, ShieldHalf } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 
 const LINKS = [
   { href: "/", label: "Context", icon: LayoutDashboard },
   { href: "/chat", label: "Talk", icon: MessageCircle },
   { href: "/incidents", label: "Log", icon: NotebookPen },
+  { href: "/settings", label: "Settings", icon: Settings },
 ];
 
 export function Nav() {

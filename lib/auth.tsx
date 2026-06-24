@@ -50,8 +50,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .finally(() => {
         if (active) setLoading(false);
       });
+
+    // Any API route returning 401 (expired session) drops us to sign-in.
+    const onUnauthorized = () => setEmail(null);
+    window.addEventListener("du:unauthorized", onUnauthorized);
     return () => {
       active = false;
+      window.removeEventListener("du:unauthorized", onUnauthorized);
     };
   }, []);
 

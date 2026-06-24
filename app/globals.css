@@ -50,7 +50,7 @@ body::after {
 }
 
 /* The coach writes letters: an illuminated initial in ember italic. */
-.coach-letter::first-letter {
+.coach-letter > :first-child::first-letter {
   float: left;
   margin: 0.04em 0.09em 0 0;
   font-family: var(--font-fraunces), Georgia, serif;
@@ -59,6 +59,66 @@ body::after {
   font-size: 3.1em;
   line-height: 0.78;
   color: #e0a24a;
+}
+
+/* Rendered Markdown in the coach's replies. */
+.coach-prose > :first-child {
+  margin-top: 0;
+}
+.coach-prose > :last-child {
+  margin-bottom: 0;
+}
+.coach-prose p {
+  margin: 0 0 0.8em;
+}
+.coach-prose ul,
+.coach-prose ol {
+  margin: 0 0 0.8em;
+  padding-left: 1.2em;
+}
+.coach-prose ul {
+  list-style: disc;
+}
+.coach-prose ol {
+  list-style: decimal;
+}
+.coach-prose li {
+  margin: 0.25em 0;
+}
+.coach-prose li::marker {
+  color: #b97e32;
+}
+.coach-prose strong {
+  color: #f5f0e6;
+  font-weight: 600;
+}
+.coach-prose em {
+  font-style: italic;
+}
+.coach-prose h1,
+.coach-prose h2,
+.coach-prose h3 {
+  margin: 1.1em 0 0.4em;
+  font-weight: 600;
+  color: #f5f0e6;
+}
+.coach-prose a {
+  color: #e0a24a;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.coach-prose code {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.88em;
+  background: #221d17;
+  padding: 0.06em 0.34em;
+  border-radius: 5px;
+}
+.coach-prose blockquote {
+  border-left: 2px solid rgba(224, 162, 74, 0.4);
+  margin: 0 0 0.8em;
+  padding-left: 0.9em;
+  color: #b4ab9c;
 }
 
 ::selection {

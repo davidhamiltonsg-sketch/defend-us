@@ -26,6 +26,8 @@ export const metadata: Metadata = {
   title: "defend-us",
   description: "A private space to think clearly about your relationship — between the moments.",
   robots: { index: false, follow: false },
+  icons: { icon: "/icon.svg", apple: "/icon.svg" },
+  appleWebApp: { capable: true, title: "defend-us", statusBarStyle: "black-translucent" },
 };
 
 export const viewport: Viewport = {

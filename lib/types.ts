@@ -9,21 +9,28 @@ export interface ChatMessage {
   createdAt: number; // epoch ms
 }
 
+export interface Conversation {
+  id?: string;
+  title: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
 // Mirrors the Part 3 incident format from the operating context.
 export interface Incident {
   id?: string;
-  date: string; // free text or ISO date as David enters it
-  trigger: string; // behaviour only — who did/said what, in sequence
-  davidDidSaid: string; // honestly, including tone, timing, withdrawal
-  damiDidSaid: string; // as observed — actions and words, not assumed motives
-  davidWanted: string; // the actual unmet need under the reaction
-  resolution: string; // how it resolved (or didn't)
-  davidRead: string; // his interpretation — what he thinks it means
-  openQuestion: string; // what David actually wants help thinking about
-  createdAt: number; // epoch ms
+  date: string;
+  trigger: string;
+  davidDidSaid: string;
+  damiDidSaid: string;
+  davidWanted: string;
+  resolution: string;
+  davidRead: string;
+  openQuestion: string;
+  createdAt: number;
 }
 
-export const EMPTY_INCIDENT: Omit<Incident, "createdAt"> = {
+export const EMPTY_INCIDENT: Omit<Incident, "id" | "createdAt"> = {
   date: "",
   trigger: "",
   davidDidSaid: "",
@@ -33,3 +40,12 @@ export const EMPTY_INCIDENT: Omit<Incident, "createdAt"> = {
   davidRead: "",
   openQuestion: "",
 };
+
+// The editable "standing context" — the living document the coach reads.
+export interface ContextData {
+  centralTension: string;
+  facts: { label: string; value: string }[];
+  nonNegotiables: string[];
+  assets: string[];
+  selfPatterns: string[];
+}

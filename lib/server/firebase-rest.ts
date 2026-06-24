@@ -23,17 +23,11 @@ export interface SignInResult {
 
 // ---- Auth ----
 
-export async function signInWithPassword(
-  email: string,
-  password: string,
-): Promise<SignInResult> {
+export async function signInWithPassword(email: string, password: string): Promise<SignInResult> {
   return identitySignIn("accounts:signInWithPassword", email, password);
 }
 
-export async function signUpWithPassword(
-  email: string,
-  password: string,
-): Promise<SignInResult> {
+export async function signUpWithPassword(email: string, password: string): Promise<SignInResult> {
   return identitySignIn("accounts:signUp", email, password);
 }
 
@@ -58,16 +52,25 @@ async function identitySignIn(
   };
 }
 
+export async function changePassword(idToken: string, password: string): Promise<void> {
+  const res = await fetch(`${IDTK}/accounts:update?key=${FIREBASE_API_KEY}`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ idToken, password, returnSecureToken: false }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new AuthError(data?.error?.message || "UPDATE_FAILED");
+  }
+}
+
 export async function refreshIdToken(refreshToken: string): Promise<{
   idToken: string;
   refreshToken: string;
   expiresIn: number;
   uid: string;
 }> {
-  const body = new URLSearchParams({
-    grant_type: "refresh_token",
-    refresh_token: refreshToken,
-  });
+  const body = new URLSearchParams({ grant_type: "refresh_token", refresh_token: refreshToken });
   const res = await fetch(`${SECURETOKEN}/token?key=${FIREBASE_API_KEY}`, {
     method: "POST",
     headers: { "content-type": "application/x-www-form-urlencoded" },
@@ -100,8 +103,10 @@ export function friendlyAuthError(code: string): string {
       return "That doesn't look like a valid email.";
     case "TOO_MANY_ATTEMPTS_TRY_LATER":
       return "Too many attempts. Wait a moment and try again.";
+    case "CREDENTIAL_TOO_OLD_LOGIN_AGAIN":
+      return "For security, sign out and back in before changing your password.";
     default:
-      return "Couldn't sign in. Please try again.";
+      return "Something went wrong. Please try again.";
   }
 }
 
@@ -113,9 +118,7 @@ function toFields(obj: Record<string, unknown>): Record<string, FsValue> {
   const fields: Record<string, FsValue> = {};
   for (const [k, v] of Object.entries(obj)) {
     if (typeof v === "number") {
-      fields[k] = Number.isInteger(v)
-        ? { integerValue: String(v) }
-        : { doubleValue: v };
+      fields[k] = Number.isInteger(v) ? { integerValue: String(v) } : { doubleValue: v };
     } else if (typeof v === "boolean") {
       fields[k] = { booleanValue: v };
     } else {
@@ -142,12 +145,13 @@ function docToObject(doc: { name: string; fields?: Record<string, FsValue> }) {
   return { id, ...fromFields(doc.fields) };
 }
 
+// `path` may contain slashes for nested collections, e.g. `conversations/abc/messages`.
 export async function listCollection(
   idToken: string,
   uid: string,
-  collection: string,
+  path: string,
 ): Promise<Array<Record<string, unknown>>> {
-  const res = await fetch(`${FS}/users/${uid}/${collection}?pageSize=300`, {
+  const res = await fetch(`${FS}/users/${uid}/${path}?pageSize=300`, {
     headers: { authorization: `Bearer ${idToken}` },
   });
   if (res.status === 404) return [];
@@ -159,10 +163,10 @@ export async function listCollection(
 export async function addToCollection(
   idToken: string,
   uid: string,
-  collection: string,
+  path: string,
   obj: Record<string, unknown>,
 ): Promise<Record<string, unknown>> {
-  const res = await fetch(`${FS}/users/${uid}/${collection}`, {
+  const res = await fetch(`${FS}/users/${uid}/${path}`, {
     method: "POST",
     headers: { authorization: `Bearer ${idToken}`, "content-type": "application/json" },
     body: JSON.stringify({ fields: toFields(obj) }),
@@ -175,10 +179,10 @@ export async function addToCollection(
 export async function deleteFromCollection(
   idToken: string,
   uid: string,
-  collection: string,
+  path: string,
   id: string,
 ): Promise<void> {
-  const res = await fetch(`${FS}/users/${uid}/${collection}/${encodeURIComponent(id)}`, {
+  const res = await fetch(`${FS}/users/${uid}/${path}/${encodeURIComponent(id)}`, {
     method: "DELETE",
     headers: { authorization: `Bearer ${idToken}` },
   });
@@ -188,13 +192,55 @@ export async function deleteFromCollection(
   }
 }
 
-export async function clearCollection(
+export async function clearCollection(idToken: string, uid: string, path: string): Promise<void> {
+  const docs = await listCollection(idToken, uid, path);
+  await Promise.all(docs.map((d) => deleteFromCollection(idToken, uid, path, d.id as string)));
+}
+
+// ---- Single documents (e.g. meta/context, meta/memory, conversations/{id}) ----
+
+export async function getDocument(
   idToken: string,
   uid: string,
-  collection: string,
+  path: string,
+): Promise<Record<string, unknown> | null> {
+  const res = await fetch(`${FS}/users/${uid}/${path}`, {
+    headers: { authorization: `Bearer ${idToken}` },
+  });
+  if (res.status === 404) return null;
+  const data = await res.json();
+  if (!res.ok) throw new FirestoreError(res.status, data?.error?.message || "GET_FAILED");
+  return fromFields(data.fields);
+}
+
+// PATCH creates the document if it doesn't exist, and sets the provided fields.
+export async function setDocument(
+  idToken: string,
+  uid: string,
+  path: string,
+  obj: Record<string, unknown>,
 ): Promise<void> {
-  const docs = await listCollection(idToken, uid, collection);
-  await Promise.all(
-    docs.map((d) => deleteFromCollection(idToken, uid, collection, d.id as string)),
-  );
+  const mask = Object.keys(obj)
+    .map((k) => `updateMask.fieldPaths=${encodeURIComponent(k)}`)
+    .join("&");
+  const res = await fetch(`${FS}/users/${uid}/${path}?${mask}`, {
+    method: "PATCH",
+    headers: { authorization: `Bearer ${idToken}`, "content-type": "application/json" },
+    body: JSON.stringify({ fields: toFields(obj) }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new FirestoreError(res.status, data?.error?.message || "SET_FAILED");
+  }
+}
+
+export async function deleteDocumentPath(idToken: string, uid: string, path: string): Promise<void> {
+  const res = await fetch(`${FS}/users/${uid}/${path}`, {
+    method: "DELETE",
+    headers: { authorization: `Bearer ${idToken}` },
+  });
+  if (!res.ok && res.status !== 404) {
+    const data = await res.json().catch(() => ({}));
+    throw new FirestoreError(res.status, data?.error?.message || "DELETE_FAILED");
+  }
 }
