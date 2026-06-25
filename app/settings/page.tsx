@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Download, KeyRound, Save, Trash2 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { changePassword, getMemory, saveMemory, wipeAll } from "@/lib/firestore";
+import { useConfirm, useToast } from "@/components/ui";
 
 export default function SettingsPage() {
   const { email, signOut } = useAuth();
@@ -45,9 +46,9 @@ function Card({ title, subtitle, children, danger }: {
 }
 
 function MemorySection() {
+  const toast = useToast();
   const [memory, setMemory] = useState("");
   const [loading, setLoading] = useState(true);
-  const [status, setStatus] = useState("");
 
   useEffect(() => {
     getMemory()
@@ -57,12 +58,11 @@ function MemorySection() {
   }, []);
 
   async function save() {
-    setStatus("");
     try {
       await saveMemory(memory);
-      setStatus("Saved.");
+      toast("Memory saved");
     } catch {
-      setStatus("Couldn't save.");
+      toast("Couldn't save", "error");
     }
   }
 
@@ -89,7 +89,6 @@ function MemorySection() {
             >
               <Save className="h-4 w-4" /> Save memory
             </button>
-            {status && <span className="text-sm text-sage">{status}</span>}
           </div>
         </>
       )}
@@ -154,11 +153,17 @@ function PasswordSection() {
 }
 
 function DataSection({ onWiped }: { onWiped: () => void }) {
+  const confirm = useConfirm();
   const [wiping, setWiping] = useState(false);
 
   async function wipe() {
-    if (!confirm("Permanently delete ALL your data — conversations, incidents, context, memory? This can't be undone.")) return;
-    if (!confirm("Last check: this is irreversible. Delete everything?")) return;
+    const ok = await confirm({
+      title: "Delete everything?",
+      body: "This permanently removes all conversations, incidents, context, and memory. It can't be undone.",
+      confirmLabel: "Delete all",
+      danger: true,
+    });
+    if (!ok) return;
     setWiping(true);
     try {
       await wipeAll();

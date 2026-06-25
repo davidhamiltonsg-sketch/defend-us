@@ -59,10 +59,11 @@ export async function POST(req: Request) {
     return json({ error: "Invalid JSON body." }, 400);
   }
 
-  const initial = (body.messages ?? [])
-    .filter((m) => m.content?.trim())
-    .map((m) => ({ role: m.role, content: m.content }));
-  if (initial.length === 0) return json({ error: "No messages provided." }, 400);
+  const filtered = (body.messages ?? []).filter((m) => m.content?.trim());
+  if (filtered.length === 0) return json({ error: "No messages provided." }, 400);
+  // Compaction-lite: only the most recent turns go to the model. Cross-turn
+  // continuity is carried by the coach's memory (Part 4), not the full transcript.
+  const initial = filtered.slice(-24).map((m) => ({ role: m.role, content: m.content }));
 
   const { idToken, uid } = session;
   const [context, memory, rawIncidents] = await Promise.all([
@@ -102,6 +103,8 @@ export async function POST(req: Request) {
             if (block.type !== "tool_use") continue;
             const out = await runTool(idToken, uid, block.name, block.input);
             results.push({ type: "tool_result", tool_use_id: block.id, content: out });
+            // Signal the action to the client (stripped from the saved text).
+            controller.enqueue(encoder.encode(`<<tool:${block.name}>>`));
           }
           messages.push({ role: "user", content: results });
         }

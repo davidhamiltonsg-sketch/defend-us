@@ -3,9 +3,11 @@
 import { useEffect, useState } from "react";
 import { Check, Pencil, Plus, X } from "lucide-react";
 import { getContext, saveContext } from "@/lib/firestore";
+import { useToast } from "./ui";
 import type { ContextData } from "@/lib/types";
 
 export function DashboardClient() {
+  const toast = useToast();
   const [context, setContext] = useState<ContextData | null>(null);
   const [draft, setDraft] = useState<ContextData | null>(null);
   const [editing, setEditing] = useState(false);
@@ -30,8 +32,9 @@ export function DashboardClient() {
       await saveContext(draft);
       setContext(draft);
       setEditing(false);
+      toast("Context saved");
     } catch {
-      // surfaced via 401 handler or left in edit mode to retry
+      toast("Couldn't save — try again", "error");
     } finally {
       setSaving(false);
     }
@@ -54,9 +57,20 @@ export function DashboardClient() {
           <p className="font-mono text-[11px] uppercase tracking-eyebrow text-smoke">
             Standing context · yours to edit
           </p>
-          <h1 className="mt-3 font-serif text-[clamp(2.2rem,5.5vw,3.4rem)] font-light leading-[1.03] tracking-tight text-bone">
+          <h1 className="mt-3 font-display text-[clamp(2.2rem,5.5vw,3.4rem)] font-light leading-[1.03] tracking-tight text-bone">
             What the coach <em className="italic text-ember">holds</em>
           </h1>
+          <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 font-mono text-[10px] uppercase tracking-eyebrow">
+            <span className="flex items-center gap-1.5 text-smoke">
+              <span className="h-1.5 w-1.5 rounded-full bg-ash" /> Facts
+            </span>
+            <span className="flex items-center gap-1.5 text-smoke">
+              <span className="h-1.5 w-1.5 rounded-full bg-ember" /> Your account
+            </span>
+            <span className="flex items-center gap-1.5 text-smoke">
+              <span className="h-1.5 w-1.5 rounded-full bg-dusk" /> The lens
+            </span>
+          </div>
         </div>
         {!editing ? (
           <button

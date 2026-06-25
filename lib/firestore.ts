@@ -79,6 +79,14 @@ export async function deleteIncident(id: string): Promise<void> {
   await req(`/api/incidents/${id}`, { method: "DELETE" });
 }
 
+export async function generateTitle(text: string): Promise<string> {
+  try {
+    return (await req<{ title: string }>("/api/title", body({ text }))).title || "";
+  } catch {
+    return "";
+  }
+}
+
 // ---- Account ----
 export async function changePassword(password: string): Promise<void> {
   await req("/api/auth/password", body({ password }));

@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { ShieldHalf } from "lucide-react";
 import { useAuth } from "@/lib/auth";
+import { Mark } from "./mark";
 
 export function AuthGate({ children }: { children: ReactNode }) {
   const { loading, email } = useAuth();
@@ -62,14 +62,14 @@ function SignInForm() {
           Private · between the moments
         </p>
         <div className="mt-4 flex items-center gap-3">
-          <span className="relative flex h-9 w-9 items-center justify-center rounded-full border border-ember/40">
+          <span className="relative flex h-10 w-10 items-center justify-center text-ember">
             <span
               aria-hidden
               className="absolute inset-0 rounded-full bg-ember/20 blur-md animate-breathe"
             />
-            <ShieldHalf className="relative h-5 w-5 text-ember" strokeWidth={1.7} />
+            <Mark className="relative h-7 w-7" glow />
           </span>
-          <span className="font-serif text-[40px] leading-none tracking-tight text-bone">
+          <span className="font-display text-[42px] leading-none tracking-tight text-bone">
             defend-us
           </span>
         </div>
