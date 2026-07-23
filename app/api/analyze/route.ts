@@ -33,10 +33,14 @@ const MAX_RAW_CHARS = 3_200_000;
 // comfortably inside that budget, not just "as much as fits in context."
 const MAX_TRANSCRIPT_CHARS = 90_000;
 // Each finding now carries two extra free-text fields (cumulativeImpact,
-// responseTiming) added since these caps were tuned for a 6000-token output
-// budget, so the per-finding cost has grown — trimmed the ceilings down
-// rather than trimming the fields, since the fields are what the schema
-// exists to capture. Paired with a higher max_tokens below.
+// responseTiming) added since these caps were last tuned, so the per-finding
+// cost has grown. Trimmed the ceilings down a bit (was 20/15) rather than
+// trimming the fields — the fields are what the schema exists to capture —
+// but the real safety margin against a truncated (invalid-JSON) tool call
+// comes from max_tokens below: a synthetic maximal response at these caps
+// (all fields filled, realistic-generous length) measures ~10-11k tokens,
+// so max_tokens is set with real headroom above that, not just above the
+// caps' raw item count.
 const MAX_FINDINGS = 16;
 const MAX_HEALTHY_FINDINGS = 12;
 const REQUEST_TIMEOUT_MS = 50_000;
@@ -256,7 +260,7 @@ export async function POST(req: Request) {
     const res = await client.messages.create(
       {
         model: MODEL,
-        max_tokens: 8000,
+        max_tokens: 16000,
         system: SYSTEM,
         tools: [TOOL],
         tool_choice: { type: "tool", name: "report_findings" },
