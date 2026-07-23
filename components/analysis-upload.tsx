@@ -5,9 +5,11 @@ import { ClipboardPaste, ScanSearch, Upload } from "lucide-react";
 import { analyzeChat } from "@/lib/firestore";
 import type { Analysis } from "@/lib/types";
 
-// Mirrors MAX_RAW_CHARS in app/api/analyze/route.ts — catching this client-side
-// gives a useful message instead of a platform-level "payload too large" error.
-const MAX_UPLOAD_CHARS = 6_000_000;
+// Mirrors MAX_RAW_CHARS in app/api/analyze/route.ts. Vercel hard-caps request
+// bodies at 4.5MB platform-wide (not something we can raise) — this catches
+// an oversized upload client-side with a useful message, before it either
+// gets stopped server-side or hits that platform limit directly.
+const MAX_UPLOAD_CHARS = 3_200_000;
 
 export function AnalysisUpload({ onDone }: { onDone: (analysis: Analysis) => void }) {
   const [raw, setRaw] = useState("");
