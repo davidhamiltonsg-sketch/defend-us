@@ -36,7 +36,9 @@ export function AnalysisList({
               <p className="truncate text-sm font-medium text-bone">{a.title}</p>
               <p className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-xs text-smoke">
                 <span>{new Date(a.createdAt).toLocaleDateString()}</span>
-                <span>· {a.messageCount} messages ·</span>
+                <span>
+                  · {a.messageCount} messages{a.sampled ? ` (${a.analyzedMessageCount} sampled)` : ""} ·
+                </span>
                 <span className={RISK_META[a.result.riskLevel]?.text ?? ""}>{RISK_META[a.result.riskLevel]?.label ?? "—"} risk</span>
                 <span>· {summarize(a)}</span>
               </p>

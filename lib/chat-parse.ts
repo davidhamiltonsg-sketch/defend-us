@@ -2,24 +2,71 @@
 // a flat list of { speaker, text } messages. No dependency on a specific
 // export format — this best-effort-detects common shapes and falls back to
 // treating unattributed lines as continuations of the previous message.
+//
+// This parses the FULL input — no truncation here. Fitting a large parsed
+// transcript into a model call's character budget is a separate step
+// (sampleToBudget below), because doing both in one pass tends to produce
+// silent, confusing double-truncation (see git history on this file).
 import type { ParsedMessage } from "./types";
-
-const MAX_MESSAGES = 800;
 
 export interface ParseResult {
   messages: ParsedMessage[];
-  truncated: boolean;
   sourceLabel: string;
 }
 
 export function parseChatInput(raw: string, filename?: string): ParseResult {
   const trimmed = raw.trim();
   const sourceLabel = filename?.trim() || "Pasted text";
-  if (!trimmed) return { messages: [], truncated: false, sourceLabel };
+  if (!trimmed) return { messages: [], sourceLabel };
 
   const messages = tryParseJson(trimmed) ?? parsePlainText(trimmed);
-  const truncated = messages.length > MAX_MESSAGES;
-  return { messages: truncated ? messages.slice(-MAX_MESSAGES) : messages, truncated, sourceLabel };
+  return { messages, sourceLabel };
+}
+
+function messageLineLength(m: ParsedMessage): number {
+  // Mirrors the "speaker: text" line format used when building the prompt.
+  return m.speaker.length + 2 + m.text.length + 1;
+}
+
+export interface BudgetResult {
+  messages: ParsedMessage[];
+  sampled: boolean;
+  totalCount: number;
+}
+
+// Fits `messages` inside `maxChars` by systematic sampling — keeping every
+// Nth message, spread evenly across the FULL chronological range — rather
+// than cutting from one end. A long-running chat's early and late history
+// both stay represented instead of one being silently dropped.
+export function sampleToBudget(messages: ParsedMessage[], maxChars: number): BudgetResult {
+  const totalCount = messages.length;
+  const totalChars = messages.reduce((sum, m) => sum + messageLineLength(m), 0);
+  if (totalChars <= maxChars || totalCount === 0) {
+    return { messages, sampled: false, totalCount };
+  }
+
+  const stride = totalChars / maxChars;
+  const sampled: ParsedMessage[] = [];
+  let nextTake = 0;
+  for (let i = 0; i < messages.length; i++) {
+    if (i >= nextTake) {
+      sampled.push(messages[i]);
+      nextTake += stride;
+    }
+  }
+
+  // Index-based stride approximates the char-budget reduction; trim any
+  // remaining overshoot (e.g. from unusually long messages) as a final guard.
+  let used = 0;
+  const trimmed: ParsedMessage[] = [];
+  for (const m of sampled) {
+    const len = messageLineLength(m);
+    if (used + len > maxChars && trimmed.length > 0) break;
+    trimmed.push(m);
+    used += len;
+  }
+
+  return { messages: trimmed, sampled: true, totalCount };
 }
 
 function tryParseJson(raw: string): ParsedMessage[] | null {

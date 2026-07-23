@@ -13,14 +13,20 @@ export async function GET() {
   const docs = await listCollection(s.idToken, s.uid, "analyses");
   docs.sort((a, b) => (Number(b.createdAt) || 0) - (Number(a.createdAt) || 0));
 
-  const analyses = docs.map((d) => ({
-    id: d.id,
-    title: d.title,
-    createdAt: Number(d.createdAt) || 0,
-    sourceLabel: d.sourceLabel,
-    messageCount: Number(d.messageCount) || 0,
-    result: parseResult(d.resultJson),
-  }));
+  const analyses = docs.map((d) => {
+    const messageCount = Number(d.messageCount) || 0;
+    return {
+      id: d.id,
+      title: d.title,
+      createdAt: Number(d.createdAt) || 0,
+      sourceLabel: d.sourceLabel,
+      messageCount,
+      // Older saved analyses predate sampling metadata — assume unsampled.
+      analyzedMessageCount: typeof d.analyzedMessageCount === "number" ? d.analyzedMessageCount : messageCount,
+      sampled: typeof d.sampled === "boolean" ? d.sampled : false,
+      result: parseResult(d.resultJson),
+    };
+  });
 
   return NextResponse.json({ analyses });
 }
