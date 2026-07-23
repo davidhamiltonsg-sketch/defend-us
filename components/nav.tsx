@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Command, LayoutDashboard, MessageCircle, NotebookPen, Settings } from "lucide-react";
+import { Command, LayoutDashboard, MessageCircle, NotebookPen, ScanSearch, Settings } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { Mark } from "./mark";
 
@@ -10,6 +10,7 @@ const LINKS = [
   { href: "/", label: "Context", icon: LayoutDashboard },
   { href: "/chat", label: "Talk", icon: MessageCircle },
   { href: "/incidents", label: "Log", icon: NotebookPen },
+  { href: "/analyze", label: "Lens", icon: ScanSearch },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 

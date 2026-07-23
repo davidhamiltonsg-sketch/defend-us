@@ -7,6 +7,7 @@ import {
   MessageCircle,
   NotebookPen,
   Plus,
+  ScanSearch,
   Search,
   Settings,
   Sparkles,
@@ -82,6 +83,7 @@ export function CommandPalette() {
       { id: "prep", label: "Prepare for a hard conversation", icon: Sparkles, run: () => go(`/chat?seed=${PREPARE}&title=Prepare`) },
       { id: "log", label: "Incident log", icon: NotebookPen, run: () => go("/incidents") },
       { id: "chat", label: "Conversations", icon: MessageCircle, run: () => go("/chat") },
+      { id: "lens", label: "Chat Lens — analyze a conversation", icon: ScanSearch, run: () => go("/analyze") },
       { id: "set", label: "Settings", icon: Settings, run: () => go("/settings") },
     ];
     const q = query.trim().toLowerCase();

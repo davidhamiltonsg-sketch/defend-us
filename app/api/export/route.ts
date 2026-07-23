@@ -10,11 +10,12 @@ export async function GET() {
   const s = await getValidSession();
   if (!s) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const [context, memory, incidents, conversations] = await Promise.all([
+  const [context, memory, incidents, conversations, analyses] = await Promise.all([
     loadContext(s.idToken, s.uid),
     loadMemory(s.idToken, s.uid),
     listCollection(s.idToken, s.uid, "incidents"),
     listCollection(s.idToken, s.uid, "conversations"),
+    listCollection(s.idToken, s.uid, "analyses"),
   ]);
 
   const withMessages = await Promise.all(
@@ -31,6 +32,7 @@ export async function GET() {
     memory,
     incidents,
     conversations: withMessages,
+    analyses,
   };
 
   return new NextResponse(JSON.stringify(payload, null, 2), {

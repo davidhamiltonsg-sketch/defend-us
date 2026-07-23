@@ -21,6 +21,7 @@ export async function POST() {
     }),
   );
   await clearCollection(s.idToken, s.uid, "incidents");
+  await clearCollection(s.idToken, s.uid, "analyses");
   await deleteDocumentPath(s.idToken, s.uid, "meta/context");
   await deleteDocumentPath(s.idToken, s.uid, "meta/memory");
 

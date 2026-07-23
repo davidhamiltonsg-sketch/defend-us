@@ -49,3 +49,46 @@ export interface ContextData {
   assets: string[];
   selfPatterns: string[];
 }
+
+// ---------------------------------------------------------------------------
+// Chat Lens — upload/paste a transcript, get it read against the manipulation-
+// pattern catalogue in lib/manipulation-patterns.ts.
+// ---------------------------------------------------------------------------
+
+export interface ParsedMessage {
+  speaker: string;
+  text: string;
+  timestamp?: string;
+}
+
+export interface AnalysisQuote {
+  speaker: string;
+  text: string;
+}
+
+export type AnalysisConfidence = "low" | "medium" | "high";
+
+export interface AnalysisFinding {
+  patternId: string;
+  speaker: string;
+  instanceCount: number;
+  confidence: AnalysisConfidence;
+  explanation: string;
+  quotes: AnalysisQuote[];
+  healthyAlternative: string;
+}
+
+export interface AnalysisResult {
+  overallSummary: string;
+  speakers: string[];
+  findings: AnalysisFinding[];
+}
+
+export interface Analysis {
+  id?: string;
+  title: string;
+  createdAt: number;
+  sourceLabel: string;
+  messageCount: number;
+  result: AnalysisResult;
+}
