@@ -247,6 +247,13 @@ function FindingCard({ finding, expandAll }: { finding: AnalysisFinding; expandA
 
           <QuoteList quotes={finding.quotes} />
 
+          {finding.responseTiming && (
+            <div className="rounded-lg border border-dusk/30 bg-dusk/[0.06] px-3.5 py-2.5">
+              <p className="font-mono text-[10px] uppercase tracking-eyebrow text-dusk-soft">Response timing</p>
+              <p className="mt-1 text-sm leading-relaxed text-ash">{finding.responseTiming}</p>
+            </div>
+          )}
+
           {finding.cumulativeImpact && (
             <div className="rounded-lg border border-dusk/30 bg-dusk/[0.06] px-3.5 py-2.5">
               <p className="font-mono text-[10px] uppercase tracking-eyebrow text-dusk-soft">Ongoing impact</p>
@@ -310,13 +317,16 @@ function HealthyCard({ finding, expandAll }: { finding: HealthyFinding; expandAl
   );
 }
 
-function QuoteList({ quotes }: { quotes: { speaker: string; text: string }[] }) {
+function QuoteList({ quotes }: { quotes: { speaker: string; text: string; timestamp?: string }[] }) {
   if (quotes.length === 0) return null;
   return (
     <div className="space-y-2">
       {quotes.map((q, i) => (
         <blockquote key={i} className="rounded-lg border-l-2 border-dusk/50 bg-night-input px-3.5 py-2.5 text-sm text-ash">
-          <span className="font-mono text-[10px] uppercase tracking-eyebrow text-smoke">{q.speaker}</span>
+          <div className="flex items-baseline justify-between gap-2">
+            <span className="font-mono text-[10px] uppercase tracking-eyebrow text-smoke">{q.speaker}</span>
+            {q.timestamp && <span className="font-mono text-[10px] text-smoke/70">{q.timestamp}</span>}
+          </div>
           <p className="mt-1 whitespace-pre-wrap layer-fact">&ldquo;{q.text}&rdquo;</p>
         </blockquote>
       ))}

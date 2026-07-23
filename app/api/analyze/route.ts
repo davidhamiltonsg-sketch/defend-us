@@ -37,6 +37,17 @@ const MAX_HEALTHY_FINDINGS = 15;
 const REQUEST_TIMEOUT_MS = 50_000;
 const PATTERN_IDS = new Set(PATTERNS.map((p) => p.id));
 const HEALTHY_PATTERN_IDS = new Set(HEALTHY_PATTERNS.map((p) => p.id));
+// Patterns that are themselves a response to a grievance being raised — the
+// ones responseTiming (sequence + duration-to-accountability) applies to.
+const RESPONSE_PATTERN_IDS = new Set([
+  "darvo",
+  "defensiveness",
+  "deflection",
+  "conditional-accountability",
+  "blame-shifting",
+  "minimization",
+  "performative-apologies",
+]);
 
 const QUOTE_SCHEMA = {
   type: "array",
@@ -46,6 +57,7 @@ const QUOTE_SCHEMA = {
     properties: {
       speaker: { type: "string" },
       text: { type: "string", description: "A verbatim excerpt from the transcript." },
+      timestamp: { type: "string", description: "The timestamp shown in the transcript for this message, if any — carry it forward so timing claims are checkable." },
     },
     required: ["speaker", "text"],
   },
@@ -125,8 +137,12 @@ const TOOL: Anthropic.Tool = {
               type: "string",
               description: "What repeated exposure to this pattern does to the person on the receiving end over time, if it recurs across the transcript — not just this one instance. If this is a genuine one-off with no established pattern, say that plainly rather than inventing a trend.",
             },
+            responseTiming: {
+              type: "string",
+              description: `ONLY for these response-to-a-grievance patterns: ${Array.from(RESPONSE_PATTERN_IDS).join(", ")}. Using the quotes' timestamps, state whether acknowledgment came before or after the defensive/deflecting response, and how long passed before real accountability (unconditional ownership, or a demonstrated change — not just an apology) appeared, if it appeared at all in this transcript. Say "not clearly established from the transcript" rather than estimating a gap the timestamps don't support. Empty string for every other pattern.`,
+            },
           },
-          required: ["patternId", "title", "severity", "frequency", "attribution", "explanation", "quotes", "healthyAlternative", "cumulativeImpact"],
+          required: ["patternId", "title", "severity", "frequency", "attribution", "explanation", "quotes", "healthyAlternative", "cumulativeImpact", "responseTiming"],
         },
       },
       healthyFindings: {
@@ -191,6 +207,8 @@ Evidence rules:
 Ongoing impact — judge patterns across the timeline, not just moment-to-moment: a single sharp incident and a mild-looking exchange that quietly repeats every few weeks are different problems, and a per-instance read that ignores repetition will understate the second one. When scoring severity and writing cumulativeImpact, weigh how a pattern lands on someone who has now been through it multiple times, not just how the single quoted exchange reads in isolation. Conversely, don't manufacture a trend where the transcript only shows one instance — say plainly when something reads as an isolated event.
 
 Did the repair actually hold? An apology or reconciliation is a separate fact from whether the underlying issue stayed resolved. When the transcript later shows the same complaint recurring after an apparent resolution, say so explicitly in cumulativeImpact rather than crediting the earlier repair as if it closed the matter — and apply this check to whichever speaker's pattern it is, not to just one side. Likewise, when checking escalation triggers, don't assume a consistent cause (e.g. "always triggered by dismissiveness") — look at what specifically preceded each instance; triggers are often more varied than a single-story explanation, and a real pattern should hold up instance by instance, not just in the aggregate telling.
+
+Response timing: when a finding is itself a response to a grievance (DARVO, Defensiveness, Deflection, Conditional Accountability, Blame-Shifting, Minimization, Performative Apologies), use the transcript's own timestamps to fill responseTiming with two things — whether acknowledgment came before or after the defensive/deflecting reaction, and how long passed before real accountability (unconditional ownership, or a demonstrated change, not just an apology) showed up, if it did at all in what you're given. Carry the relevant timestamps into the quote objects so this is checkable, not just asserted. If the timestamps don't clearly support a sequence or a duration, say that plainly rather than estimating one. This applies equally regardless of which speaker the pattern belongs to.
 
 Coverage: the transcript you're given may be a sample rather than every message — see the note at the top of the user message. When it is, that sample is evenly spaced across the FULL conversation, from its very start to its very end, so every era is represented. Reflect that honestly: lower your confidence rating when working from a sample, and if the sampling could plausibly be hiding or diluting a pattern (e.g. a lot of concerning activity clustered in a gap between sampled messages), say so in overallSummary.
 
@@ -316,11 +334,14 @@ function oneOf<T extends string>(v: unknown, options: T[], fallback: T): T {
   return options.includes(v as T) ? (v as T) : fallback;
 }
 
-function normalizeQuotes(v: unknown): { speaker: string; text: string }[] {
+function normalizeQuotes(v: unknown): { speaker: string; text: string; timestamp?: string }[] {
   if (!Array.isArray(v)) return [];
   return v
     .filter((q): q is Record<string, unknown> => !!q && typeof q === "object")
-    .map((q) => ({ speaker: str(q.speaker, "Unknown") || "Unknown", text: str(q.text) }))
+    .map((q) => {
+      const timestamp = str(q.timestamp);
+      return { speaker: str(q.speaker, "Unknown") || "Unknown", text: str(q.text), ...(timestamp ? { timestamp } : {}) };
+    })
     .filter((q) => q.text.trim())
     .slice(0, 4);
 }
@@ -340,6 +361,10 @@ function normalizeResult(input: Record<string, unknown>): AnalysisResult {
       quotes: normalizeQuotes(f.quotes),
       healthyAlternative: str(f.healthyAlternative),
       cumulativeImpact: str(f.cumulativeImpact),
+      // Only keep this for patterns where "responding to a grievance" is
+      // actually the shape of the pattern — defensively re-blank it
+      // otherwise, regardless of what the model returned.
+      responseTiming: RESPONSE_PATTERN_IDS.has(String(f.patternId)) ? str(f.responseTiming) : "",
     }))
     .slice(0, MAX_FINDINGS);
 
