@@ -20,6 +20,7 @@ import {
   HeartCrack,
   HeartHandshake,
   Hourglass,
+  Lightbulb,
   Lock,
   MessageCircleHeart,
   PauseCircle,
@@ -279,6 +280,15 @@ export const HEALTHY_PATTERNS: HealthyPatternDef[] = [
     citation: "Lazare, A. (2004). On Apology. Oxford University Press.",
     citationConfidence: "high",
     icon: ShieldCheck,
+  },
+  {
+    id: "proactive-initiative",
+    name: "Proactive Initiative",
+    summary:
+      "Noticing a shared need or a partner's problem and acting on it before being asked or reminded — the positive counterpart to needing everything prompted.",
+    citation: "Related to the absence of what Daminger, A. (2019). The Cognitive Dimension of Household Labor. American Sociological Review, describes as the unequally-distributed 'anticipation' stage of household cognitive labor.",
+    citationConfidence: "medium",
+    icon: Lightbulb,
   },
   {
     id: "self-soothing-breaks",
