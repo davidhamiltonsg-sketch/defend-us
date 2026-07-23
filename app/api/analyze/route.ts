@@ -1,6 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { NextResponse } from "next/server";
-import { parseChatInput } from "@/lib/chat-parse";
+import { parseChatInput, sampleToBudget } from "@/lib/chat-parse";
 import { HEALTHY_PATTERNS, PATTERNS } from "@/lib/manipulation-patterns";
 import { friendlyAnthropicError } from "@/lib/server/anthropic-error";
 import { addToCollection } from "@/lib/server/firebase-rest";
@@ -19,8 +19,11 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 
 const MODEL = process.env.ANTHROPIC_MODEL || "claude-opus-4-8";
-const MAX_RAW_CHARS = 300_000;
-const MAX_TRANSCRIPT_CHARS = 50_000;
+// A safety ceiling against pathological input, not the primary truncation
+// mechanism — see sampleToBudget for how large-but-reasonable transcripts
+// (e.g. years of WhatsApp history) actually get fit into a model call.
+const MAX_RAW_CHARS = 6_000_000;
+const MAX_TRANSCRIPT_CHARS = 200_000;
 const PATTERN_IDS = new Set(PATTERNS.map((p) => p.id));
 const HEALTHY_PATTERN_IDS = new Set(HEALTHY_PATTERNS.map((p) => p.id));
 
@@ -162,6 +165,8 @@ Evidence rules:
 - Never invent content that isn't in the transcript.
 - If nothing rises to the level of a pattern in a category, return an empty array for it and say so plainly in the relevant summary field — a clean result is a real result.
 
+Coverage: the transcript you're given may be a sample rather than every message — see the note at the top of the user message. When it is, that sample is evenly spaced across the FULL conversation, from its very start to its very end, so every era is represented. Reflect that honestly: lower your confidence rating when working from a sample, and if the sampling could plausibly be hiding or diluting a pattern (e.g. a lot of concerning activity clustered in a gap between sampled messages), say so in overallSummary.
+
 Call report_findings exactly once with your complete analysis.`;
 
 export async function POST(req: Request) {
@@ -177,13 +182,21 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
   }
 
-  const raw = (body.raw ?? "").slice(0, MAX_RAW_CHARS);
+  if ((body.raw ?? "").length > MAX_RAW_CHARS) {
+    return NextResponse.json(
+      { error: `That upload is too large (over ${(MAX_RAW_CHARS / 1_000_000).toFixed(0)}MB of text). Try the plain-text (.txt) export instead of an enriched JSON one — it's the same conversation in a much smaller file.` },
+      { status: 400 },
+    );
+  }
+  const raw = body.raw ?? "";
   if (!raw.trim()) return NextResponse.json({ error: "Nothing to analyze." }, { status: 400 });
 
   const parsed = parseChatInput(raw, body.filename);
   if (parsed.messages.length === 0) {
     return NextResponse.json({ error: "Couldn't find any messages in that upload." }, { status: 400 });
   }
+
+  const budget = sampleToBudget(parsed.messages, MAX_TRANSCRIPT_CHARS);
 
   const { idToken, uid } = session;
   const client = new Anthropic({ apiKey });
@@ -199,7 +212,7 @@ export async function POST(req: Request) {
       messages: [
         {
           role: "user",
-          content: `Transcript (${parsed.messages.length} messages${parsed.truncated ? ", truncated to the most recent portion" : ""}):\n\n${buildTranscript(parsed.messages)}`,
+          content: `Transcript:\n${coverageNote(budget)}\n\n${buildTranscript(budget.messages)}`,
         },
       ],
     });
@@ -215,21 +228,37 @@ export async function POST(req: Request) {
     title,
     createdAt: Date.now(),
     sourceLabel: parsed.sourceLabel,
-    messageCount: parsed.messages.length,
+    messageCount: budget.totalCount,
+    analyzedMessageCount: budget.messages.length,
+    sampled: budget.sampled,
     resultJson: JSON.stringify(result),
   };
   const saved = await addToCollection(idToken, uid, "analyses", record);
 
   return NextResponse.json({
-    analysis: { title, createdAt: record.createdAt, sourceLabel: record.sourceLabel, messageCount: record.messageCount, id: saved.id, result },
+    analysis: {
+      title,
+      createdAt: record.createdAt,
+      sourceLabel: record.sourceLabel,
+      messageCount: record.messageCount,
+      analyzedMessageCount: record.analyzedMessageCount,
+      sampled: record.sampled,
+      id: saved.id,
+      result,
+    },
   });
 }
 
+function coverageNote(budget: { sampled: boolean; messages: ParsedMessage[]; totalCount: number }): string {
+  if (!budget.sampled) return `(all ${budget.totalCount} messages)`;
+  const first = budget.messages[0]?.timestamp;
+  const last = budget.messages[budget.messages.length - 1]?.timestamp;
+  const span = first && last ? ` from ${first} to ${last}` : "";
+  return `(too long to send in full — this is an evenly-spaced sample of ${budget.messages.length} of ${budget.totalCount} total messages, spanning the full conversation${span})`;
+}
+
 function buildTranscript(messages: ParsedMessage[]): string {
-  const text = messages
-    .map((m) => `${m.timestamp ? `[${m.timestamp}] ` : ""}${m.speaker}: ${m.text.replace(/\n/g, " ")}`)
-    .join("\n");
-  return text.length > MAX_TRANSCRIPT_CHARS ? text.slice(-MAX_TRANSCRIPT_CHARS) : text;
+  return messages.map((m) => `${m.timestamp ? `[${m.timestamp}] ` : ""}${m.speaker}: ${m.text.replace(/\n/g, " ")}`).join("\n");
 }
 
 function defaultTitle(messages: ParsedMessage[]): string {

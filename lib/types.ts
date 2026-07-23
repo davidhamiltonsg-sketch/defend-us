@@ -135,6 +135,8 @@ export interface Analysis {
   title: string;
   createdAt: number;
   sourceLabel: string;
-  messageCount: number;
+  messageCount: number; // total messages found in the upload
+  analyzedMessageCount: number; // how many were actually sent to the model
+  sampled: boolean; // true when the upload was too large to send in full
   result: AnalysisResult;
 }

@@ -5,6 +5,10 @@ import { ClipboardPaste, ScanSearch, Upload } from "lucide-react";
 import { analyzeChat } from "@/lib/firestore";
 import type { Analysis } from "@/lib/types";
 
+// Mirrors MAX_RAW_CHARS in app/api/analyze/route.ts — catching this client-side
+// gives a useful message instead of a platform-level "payload too large" error.
+const MAX_UPLOAD_CHARS = 6_000_000;
+
 export function AnalysisUpload({ onDone }: { onDone: (analysis: Analysis) => void }) {
   const [raw, setRaw] = useState("");
   const [filename, setFilename] = useState<string | undefined>(undefined);
@@ -17,6 +21,16 @@ export function AnalysisUpload({ onDone }: { onDone: (analysis: Analysis) => voi
     setError("");
     try {
       const text = await file.text();
+      if (text.length > MAX_UPLOAD_CHARS) {
+        const isJson = /\.json$/i.test(file.name);
+        setError(
+          `That file is ${(text.length / 1_000_000).toFixed(1)}MB of text — too large to upload.` +
+            (isJson
+              ? " If you have the plain-text (.txt) export of the same conversation, use that instead — it's usually a fraction of the size of an enriched JSON export."
+              : " Try a shorter transcript, or split it into parts."),
+        );
+        return;
+      }
       setRaw(text);
       setFilename(file.name);
     } catch {

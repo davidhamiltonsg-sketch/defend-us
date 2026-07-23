@@ -72,6 +72,14 @@ export function AnalysisResultView({
           </div>
         </div>
 
+        {analysis.sampled && (
+          <p className="mt-4 rounded-lg border border-dusk/30 bg-dusk/[0.06] px-3.5 py-2.5 text-xs leading-relaxed text-ash">
+            This conversation was too long to send in full ({analysis.messageCount.toLocaleString()} messages).
+            An evenly-spaced sample of {analysis.analyzedMessageCount.toLocaleString()} messages — spanning the
+            entire conversation from start to end, not just one part of it — was analyzed instead.
+          </p>
+        )}
+
         <div className="mt-5 grid gap-4 border-t border-night-hair pt-5 sm:grid-cols-2">
           <div>
             <p className="font-mono text-[10px] uppercase tracking-eyebrow text-smoke">Risk assessment</p>
