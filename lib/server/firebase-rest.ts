@@ -52,6 +52,21 @@ async function identitySignIn(
   };
 }
 
+// Sends Firebase's own password-reset email — the user sets their new
+// password themselves via Firebase's hosted action page. We never see or
+// choose the password ourselves.
+export async function sendPasswordResetEmail(email: string): Promise<void> {
+  const res = await fetch(`${IDTK}/accounts:sendOobCode?key=${FIREBASE_API_KEY}`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ requestType: "PASSWORD_RESET", email }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new AuthError(data?.error?.message || "RESET_FAILED");
+  }
+}
+
 export async function changePassword(idToken: string, password: string): Promise<void> {
   const res = await fetch(`${IDTK}/accounts:update?key=${FIREBASE_API_KEY}`, {
     method: "POST",
