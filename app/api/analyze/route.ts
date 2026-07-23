@@ -32,8 +32,13 @@ const MAX_RAW_CHARS = 3_200_000;
 // (via more findings to report) more output to generate, so this has to stay
 // comfortably inside that budget, not just "as much as fits in context."
 const MAX_TRANSCRIPT_CHARS = 90_000;
-const MAX_FINDINGS = 20;
-const MAX_HEALTHY_FINDINGS = 15;
+// Each finding now carries two extra free-text fields (cumulativeImpact,
+// responseTiming) added since these caps were tuned for a 6000-token output
+// budget, so the per-finding cost has grown — trimmed the ceilings down
+// rather than trimming the fields, since the fields are what the schema
+// exists to capture. Paired with a higher max_tokens below.
+const MAX_FINDINGS = 16;
+const MAX_HEALTHY_FINDINGS = 12;
 const REQUEST_TIMEOUT_MS = 50_000;
 const PATTERN_IDS = new Set(PATTERNS.map((p) => p.id));
 const HEALTHY_PATTERN_IDS = new Set(HEALTHY_PATTERNS.map((p) => p.id));
@@ -251,7 +256,7 @@ export async function POST(req: Request) {
     const res = await client.messages.create(
       {
         model: MODEL,
-        max_tokens: 6000,
+        max_tokens: 8000,
         system: SYSTEM,
         tools: [TOOL],
         tool_choice: { type: "tool", name: "report_findings" },
