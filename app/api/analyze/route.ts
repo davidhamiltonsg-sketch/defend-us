@@ -2,6 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { NextResponse } from "next/server";
 import { parseChatInput } from "@/lib/chat-parse";
 import { HEALTHY_PATTERNS, PATTERNS } from "@/lib/manipulation-patterns";
+import { friendlyAnthropicError } from "@/lib/server/anthropic-error";
 import { addToCollection } from "@/lib/server/firebase-rest";
 import { getValidSession } from "@/lib/server/session";
 import {
@@ -206,7 +207,7 @@ export async function POST(req: Request) {
     if (!toolUse) throw new Error("The model did not return a structured analysis.");
     result = normalizeResult(toolUse.input as Record<string, unknown>);
   } catch (e) {
-    return NextResponse.json({ error: e instanceof Error ? e.message : "Analysis failed." }, { status: 502 });
+    return NextResponse.json({ error: friendlyAnthropicError(e) }, { status: 502 });
   }
 
   const title = body.title?.trim() || defaultTitle(parsed.messages);

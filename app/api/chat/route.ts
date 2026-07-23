@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { buildSystemPrompt } from "@/lib/coaching-context";
+import { friendlyAnthropicError } from "@/lib/server/anthropic-error";
 import { addToCollection, listCollection } from "@/lib/server/firebase-rest";
 import { getValidSession } from "@/lib/server/session";
 import { loadContext, loadMemory, saveMemory } from "@/lib/server/store";
@@ -110,8 +111,7 @@ export async function POST(req: Request) {
         }
         controller.close();
       } catch (err) {
-        const message = err instanceof Error ? err.message : "Unknown error";
-        controller.enqueue(encoder.encode(`\n\n[error] ${message}`));
+        controller.enqueue(encoder.encode(`\n\n[error] ${friendlyAnthropicError(err)}`));
         controller.close();
       }
     },
