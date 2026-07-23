@@ -16,6 +16,7 @@ import {
   Drama,
   Ear,
   Eye,
+  GitCompareArrows,
   Hand,
   HeartCrack,
   HeartHandshake,
@@ -193,6 +194,16 @@ export const PATTERNS: PatternDef[] = [
     icon: Wand2,
   },
   {
+    id: "inconsistent-account",
+    name: "Inconsistent Account",
+    severity: "moderate",
+    summary:
+      "A speaker's own account of the same event changes over the course of the conversation — a different timeline, a denied detail that was earlier confirmed, a claim that contradicts something they said themselves elsewhere in the transcript. This checks internal consistency against the transcript's own record, not against outside truth — it is evidence of a contradiction, not proof of a lie, and should be reported as exactly that.",
+    citation: "Vrij, A., Granhag, P.A., & Porter, S. (2010). Pitfalls and Opportunities in Nonverbal and Verbal Lie Detection. Psychological Science in the Public Interest, 11(3), 89–121 — including that review's own caution that inconsistency alone is weak evidence of deception.",
+    citationConfidence: "related",
+    icon: GitCompareArrows,
+  },
+  {
     id: "blame-shifting",
     name: "Blame-Shifting",
     severity: "moderate",
@@ -285,7 +296,7 @@ export const HEALTHY_PATTERNS: HealthyPatternDef[] = [
     id: "proactive-initiative",
     name: "Proactive Initiative",
     summary:
-      "Noticing a shared need or a partner's problem and acting on it before being asked or reminded — the positive counterpart to needing everything prompted.",
+      "Noticing a need in the relationship or the OTHER person's problem — not one's own — and acting on it before being asked or reminded. Self-directed initiative (pursuing one's own job, health, or interests unprompted) is a different thing and should not be counted here; this is specifically about care or effort directed at the partner or a shared responsibility.",
     citation: "Related to the absence of what Daminger, A. (2019). The Cognitive Dimension of Household Labor. American Sociological Review, describes as the unequally-distributed 'anticipation' stage of household cognitive labor.",
     citationConfidence: "medium",
     icon: Lightbulb,
