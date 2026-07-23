@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { listCollection } from "@/lib/server/firebase-rest";
 import { getValidSession } from "@/lib/server/session";
-import type { AnalysisResult } from "@/lib/types";
+import { EMPTY_ANALYSIS_RESULT, type AnalysisResult } from "@/lib/types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -25,13 +25,15 @@ export async function GET() {
   return NextResponse.json({ analyses });
 }
 
+// Defensively merges over EMPTY_ANALYSIS_RESULT so older saved analyses
+// (from before a schema field was added) still render without crashing.
 function parseResult(json: unknown): AnalysisResult {
   if (typeof json === "string") {
     try {
-      return JSON.parse(json) as AnalysisResult;
+      return { ...EMPTY_ANALYSIS_RESULT, ...(JSON.parse(json) as Partial<AnalysisResult>) };
     } catch {
       /* fall through */
     }
   }
-  return { overallSummary: "", speakers: [], findings: [] };
+  return EMPTY_ANALYSIS_RESULT;
 }

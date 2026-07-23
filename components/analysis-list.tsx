@@ -1,7 +1,7 @@
 "use client";
 
 import { Trash2 } from "lucide-react";
-import { PATTERN_MAP } from "@/lib/manipulation-patterns";
+import { RISK_META } from "@/lib/manipulation-patterns";
 import type { Analysis } from "@/lib/types";
 
 export function AnalysisList({
@@ -34,8 +34,11 @@ export function AnalysisList({
           >
             <div className="min-w-0">
               <p className="truncate text-sm font-medium text-bone">{a.title}</p>
-              <p className="mt-0.5 text-xs text-smoke">
-                {new Date(a.createdAt).toLocaleDateString()} · {a.messageCount} messages · {summarize(a)}
+              <p className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-xs text-smoke">
+                <span>{new Date(a.createdAt).toLocaleDateString()}</span>
+                <span>· {a.messageCount} messages ·</span>
+                <span className={RISK_META[a.result.riskLevel]?.text ?? ""}>{RISK_META[a.result.riskLevel]?.label ?? "—"} risk</span>
+                <span>· {summarize(a)}</span>
               </p>
             </div>
             <span
@@ -58,7 +61,10 @@ export function AnalysisList({
 
 function summarize(a: Analysis): string {
   const n = a.result.findings.length;
-  if (n === 0) return "no patterns found";
-  const severe = a.result.findings.filter((f) => PATTERN_MAP.get(f.patternId)?.severity === "severe").length;
-  return severe > 0 ? `${n} pattern${n === 1 ? "" : "s"}, ${severe} severe` : `${n} pattern${n === 1 ? "" : "s"}`;
+  const h = a.result.healthyFindings.length;
+  if (n === 0 && h === 0) return "no patterns found";
+  const parts = [];
+  if (n > 0) parts.push(`${n} concerning`);
+  if (h > 0) parts.push(`${h} healthy`);
+  return parts.join(", ");
 }
