@@ -47,7 +47,7 @@ export function AnalyzeClient() {
           <p className="font-mono text-[11px] uppercase tracking-eyebrow text-smoke">Chat Lens</p>
           <h1 className="mt-2 font-display text-4xl tracking-tight text-bone">Read a conversation</h1>
           <p className="mt-2 max-w-xl text-ash">
-            Upload or paste a transcript. It&apos;s checked against 19 concerning patterns and 8 healthy ones, each
+            Upload or paste a transcript. It&apos;s checked against 21 concerning patterns and 9 healthy ones, each
             grounded in a cited, published source — evidence quoted straight from the text, both speakers held to
             the same bar. Not a verdict on anyone; a place to look closer.
           </p>

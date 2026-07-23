@@ -10,6 +10,7 @@
 // those are marked `citationConfidence: "related"` and point to the closest
 // legitimate research construct instead of a false-precision citation.
 import {
+  Annoyed,
   ArrowRightLeft,
   ArrowUpDown,
   Asterisk,
@@ -23,6 +24,7 @@ import {
   Hourglass,
   Lightbulb,
   Lock,
+  Megaphone,
   MessageCircleHeart,
   PauseCircle,
   RefreshCw,
@@ -31,6 +33,7 @@ import {
   Shuffle,
   Smile,
   Sparkles,
+  Star,
   Undo2,
   Users,
   VolumeX,
@@ -109,9 +112,29 @@ export const PATTERNS: PatternDef[] = [
     severity: "significant",
     summary:
       "Deliberate, prolonged withdrawal of communication used as punishment or leverage, rather than a genuine, time-bound break to de-escalate.",
-    citation: "Two related constructs: Williams, K.D., Shore, W.J., & Grahe, J.E. (1998). Group Processes & Intergroup Relations, 1(2), 117–141 (ostracism as punishment); Gottman, J.M., & Levenson, R.W. (1992). JPSP, 63(2), 221–233 ('stonewalling', one of the Four Horsemen).",
+    citation: "Two related constructs: Williams, K.D., Shore, W.J., & Grahe, J.E. (1998). Group Processes & Intergroup Relations, 1(2), 117–141 (ostracism as punishment); Gottman, J.M., & Levenson, R.W. (1992). JPSP, 63(2), 221–233 ('stonewalling', one of the Four Horsemen — see also Criticism, Contempt, Defensiveness below).",
     citationConfidence: "high",
     icon: VolumeX,
+  },
+  {
+    id: "criticism",
+    name: "Criticism",
+    severity: "significant",
+    summary:
+      "Attacking a partner's character or personality — \"you always,\" \"you never,\" \"what's wrong with you\" — rather than raising a specific complaint about a specific behavior. Distinct from a legitimate grievance, which names the action, not the person.",
+    citation: "Gottman, J.M., & Levenson, R.W. (1992). JPSP, 63(2), 221–233 — one of the Four Horsemen, alongside contempt, defensiveness, and stonewalling.",
+    citationConfidence: "high",
+    icon: Megaphone,
+  },
+  {
+    id: "contempt",
+    name: "Contempt",
+    severity: "significant",
+    summary:
+      "Mockery, sarcasm, name-calling, or hostile humor that communicates disgust or moral superiority rather than disagreement. In Gottman's own longitudinal research, contempt was the single strongest predictor of divorce among the Four Horsemen.",
+    citation: "Gottman, J.M., & Levenson, R.W. (1992). JPSP, 63(2), 221–233 — one of the Four Horsemen, alongside criticism, defensiveness, and stonewalling.",
+    citationConfidence: "high",
+    icon: Annoyed,
   },
   {
     id: "defensiveness",
@@ -119,7 +142,7 @@ export const PATTERNS: PatternDef[] = [
     severity: "significant",
     summary:
       "Meeting a raised concern with self-protective counter-attack, excuse-making, or reversing blame back onto the other person — treating being at fault as an accusation to repel rather than something to hear.",
-    citation: "Gottman, J.M., & Levenson, R.W. (1992). JPSP, 63(2), 221–233 — one of the Four Horsemen, alongside stonewalling.",
+    citation: "Gottman, J.M., & Levenson, R.W. (1992). JPSP, 63(2), 221–233 — one of the Four Horsemen, alongside criticism, contempt, and stonewalling.",
     citationConfidence: "high",
     icon: ShieldOff,
   },
@@ -273,6 +296,15 @@ export const HEALTHY_PATTERNS: HealthyPatternDef[] = [
     citation: "Rogers, C.R., & Farson, R.E. (1957). Active Listening. Industrial Relations Center, University of Chicago. (Rogers's own term was 'reflective listening'; Farson coined 'active listening'.)",
     citationConfidence: "high",
     icon: Ear,
+  },
+  {
+    id: "culture-of-appreciation",
+    name: "Culture of Appreciation",
+    summary:
+      "Voicing genuine fondness, respect, or admiration for the partner — Gottman's specific antidote to contempt, and something he found distinguished the couples in his research who stayed together.",
+    citation: "Gottman, J.M., & Silver, N. (1999). The Seven Principles for Making Marriage Work — 'Nurture Fondness and Admiration'.",
+    citationConfidence: "high",
+    icon: Star,
   },
   {
     id: "repair-attempts",
