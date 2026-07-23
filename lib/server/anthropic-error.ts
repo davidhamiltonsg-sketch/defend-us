@@ -1,8 +1,18 @@
 // Turns an Anthropic SDK error into a message worth showing a user, instead
 // of the raw JSON error body (which is what `.message` often is).
-import { APIError, AuthenticationError, NotFoundError, PermissionDeniedError, RateLimitError } from "@anthropic-ai/sdk";
+import {
+  APIConnectionTimeoutError,
+  APIError,
+  AuthenticationError,
+  NotFoundError,
+  PermissionDeniedError,
+  RateLimitError,
+} from "@anthropic-ai/sdk";
 
 export function friendlyAnthropicError(e: unknown): string {
+  if (e instanceof APIConnectionTimeoutError) {
+    return "That request took too long to complete — likely because there's a lot to analyze. Try a shorter transcript, or split it into a couple of smaller ones.";
+  }
   if (e instanceof NotFoundError) {
     const detail = errorDetailMessage(e);
     if (detail && /model/i.test(detail)) {

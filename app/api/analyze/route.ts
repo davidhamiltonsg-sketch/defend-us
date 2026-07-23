@@ -23,7 +23,14 @@ const MODEL = process.env.ANTHROPIC_MODEL || "claude-opus-4-8";
 // mechanism — see sampleToBudget for how large-but-reasonable transcripts
 // (e.g. years of WhatsApp history) actually get fit into a model call.
 const MAX_RAW_CHARS = 6_000_000;
-const MAX_TRANSCRIPT_CHARS = 200_000;
+// Vercel Hobby hard-kills this route at maxDuration (60s) regardless of what
+// our own code does — a bigger transcript means more input to process AND
+// (via more findings to report) more output to generate, so this has to stay
+// comfortably inside that budget, not just "as much as fits in context."
+const MAX_TRANSCRIPT_CHARS = 90_000;
+const MAX_FINDINGS = 20;
+const MAX_HEALTHY_FINDINGS = 15;
+const REQUEST_TIMEOUT_MS = 50_000;
 const PATTERN_IDS = new Set(PATTERNS.map((p) => p.id));
 const HEALTHY_PATTERN_IDS = new Set(HEALTHY_PATTERNS.map((p) => p.id));
 
@@ -93,7 +100,8 @@ const TOOL: Anthropic.Tool = {
       },
       findings: {
         type: "array",
-        description: "Concerning-pattern instances. Apply the identical evidentiary bar to every speaker — do not favor whichever speaker uploaded this transcript.",
+        maxItems: MAX_FINDINGS,
+        description: `Concerning-pattern instances, most significant first (cap at ${MAX_FINDINGS} — group repeats of the same pattern from the same speaker into one entry with a higher instanceCount rather than listing near-duplicates). Apply the identical evidentiary bar to every speaker — do not favor whichever speaker uploaded this transcript.`,
         items: {
           type: "object",
           properties: {
@@ -111,7 +119,8 @@ const TOOL: Anthropic.Tool = {
       },
       healthyFindings: {
         type: "array",
-        description: "Healthy/protective-pattern instances, from either or both speakers. Report these with the same rigor as concerning findings — this analysis must not only list red flags.",
+        maxItems: MAX_HEALTHY_FINDINGS,
+        description: `Healthy/protective-pattern instances, from either or both speakers, most notable first (cap at ${MAX_HEALTHY_FINDINGS}). Report these with the same rigor as concerning findings — this analysis must not only list red flags.`,
         items: {
           type: "object",
           properties: {
@@ -203,19 +212,24 @@ export async function POST(req: Request) {
 
   let result: AnalysisResult;
   try {
-    const res = await client.messages.create({
-      model: MODEL,
-      max_tokens: 8192,
-      system: SYSTEM,
-      tools: [TOOL],
-      tool_choice: { type: "tool", name: "report_findings" },
-      messages: [
-        {
-          role: "user",
-          content: `Transcript:\n${coverageNote(budget)}\n\n${buildTranscript(budget.messages)}`,
-        },
-      ],
-    });
+    const res = await client.messages.create(
+      {
+        model: MODEL,
+        max_tokens: 6000,
+        system: SYSTEM,
+        tools: [TOOL],
+        tool_choice: { type: "tool", name: "report_findings" },
+        messages: [
+          {
+            role: "user",
+            content: `Transcript:\n${coverageNote(budget)}\n\n${buildTranscript(budget.messages)}`,
+          },
+        ],
+      },
+      // Fail on our own terms well inside Vercel's hard 60s cutoff, so a slow
+      // request gets a clear error instead of a raw platform 504.
+      { timeout: REQUEST_TIMEOUT_MS },
+    );
     const toolUse = res.content.find((b): b is Anthropic.ToolUseBlock => b.type === "tool_use");
     if (!toolUse) throw new Error("The model did not return a structured analysis.");
     result = normalizeResult(toolUse.input as Record<string, unknown>);
@@ -303,7 +317,8 @@ function normalizeResult(input: Record<string, unknown>): AnalysisResult {
       explanation: str(f.explanation),
       quotes: normalizeQuotes(f.quotes),
       healthyAlternative: str(f.healthyAlternative),
-    }));
+    }))
+    .slice(0, MAX_FINDINGS);
 
   const healthyRaw = Array.isArray(input.healthyFindings) ? input.healthyFindings : [];
   const healthyFindings = healthyRaw
@@ -316,7 +331,8 @@ function normalizeResult(input: Record<string, unknown>): AnalysisResult {
       attribution: str(f.attribution, "Unknown") || "Unknown",
       explanation: str(f.explanation),
       quotes: normalizeQuotes(f.quotes),
-    }));
+    }))
+    .slice(0, MAX_HEALTHY_FINDINGS);
 
   const timelineRaw = Array.isArray(input.tensionTimeline) ? input.tensionTimeline : [];
   const tensionTimeline = timelineRaw
