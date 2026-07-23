@@ -67,6 +67,7 @@ export interface ParsedMessage {
 export interface AnalysisQuote {
   speaker: string;
   text: string;
+  timestamp?: string; // carried from the transcript, when available — grounds any timing claim in visible evidence
 }
 
 export type AnalysisConfidence = "low" | "medium" | "high";
@@ -84,6 +85,18 @@ export interface AnalysisFinding {
   explanation: string;
   quotes: AnalysisQuote[];
   healthyAlternative: string;
+  // What repeated exposure to this pattern does to the other person over
+  // time, when it recurs — distinct from `explanation`, which is about this
+  // one instance. Judging severity per-incident misses that a mild-looking
+  // exchange repeated monthly can matter more than one severe outlier.
+  cumulativeImpact: string;
+  // For patterns that are themselves a response to a grievance (DARVO,
+  // Defensiveness, Deflection, Conditional Accountability, Blame-Shifting,
+  // Minimization, Performative Apologies): whether acknowledgment came
+  // before the defensive/deflecting response, and how long until real
+  // accountability appeared, if it did — grounded in the quotes' timestamps.
+  // Empty string when the finding isn't a response-to-a-grievance pattern.
+  responseTiming: string;
 }
 
 // A healthy-communication instance — matched against HEALTHY_PATTERNS.

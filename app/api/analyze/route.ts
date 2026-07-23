@@ -37,6 +37,17 @@ const MAX_HEALTHY_FINDINGS = 15;
 const REQUEST_TIMEOUT_MS = 50_000;
 const PATTERN_IDS = new Set(PATTERNS.map((p) => p.id));
 const HEALTHY_PATTERN_IDS = new Set(HEALTHY_PATTERNS.map((p) => p.id));
+// Patterns that are themselves a response to a grievance being raised — the
+// ones responseTiming (sequence + duration-to-accountability) applies to.
+const RESPONSE_PATTERN_IDS = new Set([
+  "darvo",
+  "defensiveness",
+  "deflection",
+  "conditional-accountability",
+  "blame-shifting",
+  "minimization",
+  "performative-apologies",
+]);
 
 const QUOTE_SCHEMA = {
   type: "array",
@@ -46,6 +57,7 @@ const QUOTE_SCHEMA = {
     properties: {
       speaker: { type: "string" },
       text: { type: "string", description: "A verbatim excerpt from the transcript." },
+      timestamp: { type: "string", description: "The timestamp shown in the transcript for this message, if any — carry it forward so timing claims are checkable." },
     },
     required: ["speaker", "text"],
   },
@@ -105,20 +117,32 @@ const TOOL: Anthropic.Tool = {
       findings: {
         type: "array",
         maxItems: MAX_FINDINGS,
-        description: `Concerning-pattern instances, most significant first (cap at ${MAX_FINDINGS} — group repeats of the same pattern from the same speaker into one entry with a higher instanceCount rather than listing near-duplicates). Apply the identical evidentiary bar to every speaker — do not favor whichever speaker uploaded this transcript.`,
+        description: `Concerning-pattern instances, most significant first (cap at ${MAX_FINDINGS} — group repeats of the same pattern from the same speaker into one entry with a higher frequency rather than listing near-duplicates). Apply the identical evidentiary bar to every speaker — do not favor whichever speaker uploaded this transcript.`,
         items: {
           type: "object",
           properties: {
             patternId: { type: "string", enum: Array.from(PATTERN_IDS) },
             title: { type: "string", description: "A short, specific description of this instance, e.g. 'Dismissing feelings with \"you're overreacting\"'." },
-            severity: { type: "string", enum: ["serious", "moderate", "minor"], description: "How severe THIS instance reads in context — independent of the pattern's general tier." },
+            severity: {
+              type: "string",
+              enum: ["serious", "moderate", "minor"],
+              description: "How severe THIS instance reads in context — independent of the pattern's general tier. A mild-looking instance that recurs often (see frequency + cumulativeImpact) can still warrant a higher severity than a one-off outlier.",
+            },
             frequency: { type: "string", enum: ["frequent", "occasional", "rare"] },
             attribution: { type: "string", description: "The speaker name who exhibited this, or 'Both' if it's mutual." },
             explanation: { type: "string", description: "Concrete: what was said, why it reads as this pattern rather than something more benign." },
             quotes: QUOTE_SCHEMA,
             healthyAlternative: { type: "string", description: "A short, concrete rewrite or approach specific to this excerpt — not generic advice." },
+            cumulativeImpact: {
+              type: "string",
+              description: "What repeated exposure to this pattern does to the person on the receiving end over time, if it recurs across the transcript — not just this one instance. If this is a genuine one-off with no established pattern, say that plainly rather than inventing a trend.",
+            },
+            responseTiming: {
+              type: "string",
+              description: `ONLY for these response-to-a-grievance patterns: ${Array.from(RESPONSE_PATTERN_IDS).join(", ")}. Using the quotes' timestamps, state whether acknowledgment came before or after the defensive/deflecting response, and how long passed before real accountability (unconditional ownership, or a demonstrated change — not just an apology) appeared, if it appeared at all in this transcript. Say "not clearly established from the transcript" rather than estimating a gap the timestamps don't support. Empty string for every other pattern.`,
+            },
           },
-          required: ["patternId", "title", "severity", "frequency", "attribution", "explanation", "quotes", "healthyAlternative"],
+          required: ["patternId", "title", "severity", "frequency", "attribution", "explanation", "quotes", "healthyAlternative", "cumulativeImpact", "responseTiming"],
         },
       },
       healthyFindings: {
@@ -165,10 +189,12 @@ const SYSTEM = `You are a careful, trauma-informed analyst reading a chat transc
 
 ${catalogBlock()}
 
+Grounding — never guess or invent: every claim you make must trace to an exact, quotable passage in the transcript and to a named pattern in the catalogue above. Do not infer tone of voice, private intent, or off-text context (a phone call, an in-person conversation) that the transcript doesn't show — if a text exchange references something that evidently happened off-text, say plainly that it isn't visible in the transcript rather than filling the gap with a guess. "No evidence found in this transcript" is a different, more honest claim than "this didn't happen," and you should say the former, never imply the latter. If you are not confident a claim is directly supported by the text, leave it out.
+
 Neutrality — this is the most important rule:
 - Treat every speaker in the transcript symmetrically. Apply the exact same bar for evidence to each of them.
 - Do not assume whoever uploaded this transcript is the wronged party, and do not assume the opposite either. You do not know who uploaded it.
-- Actively look for concerning patterns AND healthy patterns from every speaker, not just one. If only one speaker's behavior is reported, that must be because the evidence genuinely only supports that — not because of an assumption about who is "the problem."
+- Actively look for concerning patterns AND healthy patterns from every speaker, not just one. If only one speaker's behavior is reported, that must be because the evidence genuinely only supports that — not because of an assumption about who is "the problem." When you find a concerning pattern from one speaker, explicitly check the transcript for a comparable — even if lesser or different-shaped — behavior from the other speaker before concluding it's one-sided.
 - Do not flatter anyone. Do not soften a finding because it might be about the person reading the report.
 
 Evidence rules:
@@ -177,6 +203,12 @@ Evidence rules:
 - Do not diagnose anyone with a clinical or personality label, and do not predict the relationship's future. Describe behavior, not identity.
 - Never invent content that isn't in the transcript.
 - If nothing rises to the level of a pattern in a category, return an empty array for it and say so plainly in the relevant summary field — a clean result is a real result.
+
+Ongoing impact — judge patterns across the timeline, not just moment-to-moment: a single sharp incident and a mild-looking exchange that quietly repeats every few weeks are different problems, and a per-instance read that ignores repetition will understate the second one. When scoring severity and writing cumulativeImpact, weigh how a pattern lands on someone who has now been through it multiple times, not just how the single quoted exchange reads in isolation. Conversely, don't manufacture a trend where the transcript only shows one instance — say plainly when something reads as an isolated event.
+
+Did the repair actually hold? An apology or reconciliation is a separate fact from whether the underlying issue stayed resolved. When the transcript later shows the same complaint recurring after an apparent resolution, say so explicitly in cumulativeImpact rather than crediting the earlier repair as if it closed the matter — and apply this check to whichever speaker's pattern it is, not to just one side. Likewise, when checking escalation triggers, don't assume a consistent cause (e.g. "always triggered by dismissiveness") — look at what specifically preceded each instance; triggers are often more varied than a single-story explanation, and a real pattern should hold up instance by instance, not just in the aggregate telling.
+
+Response timing: when a finding is itself a response to a grievance (DARVO, Defensiveness, Deflection, Conditional Accountability, Blame-Shifting, Minimization, Performative Apologies), use the transcript's own timestamps to fill responseTiming with two things — whether acknowledgment came before or after the defensive/deflecting reaction, and how long passed before real accountability (unconditional ownership, or a demonstrated change, not just an apology) showed up, if it did at all in what you're given. Carry the relevant timestamps into the quote objects so this is checkable, not just asserted. If the timestamps don't clearly support a sequence or a duration, say that plainly rather than estimating one. This applies equally regardless of which speaker the pattern belongs to.
 
 Coverage: the transcript you're given may be a sample rather than every message — see the note at the top of the user message. When it is, that sample is evenly spaced across the FULL conversation, from its very start to its very end, so every era is represented. Reflect that honestly: lower your confidence rating when working from a sample, and if the sampling could plausibly be hiding or diluting a pattern (e.g. a lot of concerning activity clustered in a gap between sampled messages), say so in overallSummary.
 
@@ -302,11 +334,14 @@ function oneOf<T extends string>(v: unknown, options: T[], fallback: T): T {
   return options.includes(v as T) ? (v as T) : fallback;
 }
 
-function normalizeQuotes(v: unknown): { speaker: string; text: string }[] {
+function normalizeQuotes(v: unknown): { speaker: string; text: string; timestamp?: string }[] {
   if (!Array.isArray(v)) return [];
   return v
     .filter((q): q is Record<string, unknown> => !!q && typeof q === "object")
-    .map((q) => ({ speaker: str(q.speaker, "Unknown") || "Unknown", text: str(q.text) }))
+    .map((q) => {
+      const timestamp = str(q.timestamp);
+      return { speaker: str(q.speaker, "Unknown") || "Unknown", text: str(q.text), ...(timestamp ? { timestamp } : {}) };
+    })
     .filter((q) => q.text.trim())
     .slice(0, 4);
 }
@@ -325,6 +360,11 @@ function normalizeResult(input: Record<string, unknown>): AnalysisResult {
       explanation: str(f.explanation),
       quotes: normalizeQuotes(f.quotes),
       healthyAlternative: str(f.healthyAlternative),
+      cumulativeImpact: str(f.cumulativeImpact),
+      // Only keep this for patterns where "responding to a grievance" is
+      // actually the shape of the pattern — defensively re-blank it
+      // otherwise, regardless of what the model returned.
+      responseTiming: RESPONSE_PATTERN_IDS.has(String(f.patternId)) ? str(f.responseTiming) : "",
     }))
     .slice(0, MAX_FINDINGS);
 
