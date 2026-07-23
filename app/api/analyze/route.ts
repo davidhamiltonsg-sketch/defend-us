@@ -19,10 +19,14 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 
 const MODEL = process.env.ANTHROPIC_MODEL || "claude-opus-4-8";
-// A safety ceiling against pathological input, not the primary truncation
-// mechanism — see sampleToBudget for how large-but-reasonable transcripts
-// (e.g. years of WhatsApp history) actually get fit into a model call.
-const MAX_RAW_CHARS = 6_000_000;
+// Vercel hard-caps Serverless Function request bodies at 4.5MB — platform-
+// enforced, not configurable from app code (see FUNCTION_PAYLOAD_TOO_LARGE
+// in Vercel's docs). Above that, the platform itself returns a raw 413
+// before this route ever runs, so raising this any higher wouldn't help —
+// it'd just trade our friendly error for an unhandled one. Staying well
+// under 4.5MB leaves room for JSON-escaping overhead (quotes/newlines in
+// the transcript inflate the wire size of the POST body by 10-20%).
+const MAX_RAW_CHARS = 3_200_000;
 // Vercel Hobby hard-kills this route at maxDuration (60s) regardless of what
 // our own code does — a bigger transcript means more input to process AND
 // (via more findings to report) more output to generate, so this has to stay
@@ -227,8 +231,12 @@ export async function POST(req: Request) {
         ],
       },
       // Fail on our own terms well inside Vercel's hard 60s cutoff, so a slow
-      // request gets a clear error instead of a raw platform 504.
-      { timeout: REQUEST_TIMEOUT_MS },
+      // request gets a clear error instead of a raw platform 504. Retries are
+      // OFF: the SDK retries timeouts by default (maxRetries: 2), which meant
+      // up to 3 attempts x this timeout — several times Vercel's own ceiling,
+      // so the platform was killing the function mid-retry before our catch
+      // block ever ran. One attempt, bounded, is what actually fits.
+      { timeout: REQUEST_TIMEOUT_MS, maxRetries: 0 },
     );
     const toolUse = res.content.find((b): b is Anthropic.ToolUseBlock => b.type === "tool_use");
     if (!toolUse) throw new Error("The model did not return a structured analysis.");
