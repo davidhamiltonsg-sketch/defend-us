@@ -130,7 +130,7 @@ export function AnalysisUpload({ onDone }: { onDone: (analysis: Analysis) => voi
         </button>
         {busy && (
           <span className="font-mono text-[11px] uppercase tracking-eyebrow text-smoke animate-glowpulse">
-            checking against 13 patterns…
+            checking against 16 concerning + 7 healthy patterns…
           </span>
         )}
       </div>

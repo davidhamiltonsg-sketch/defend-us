@@ -84,6 +84,11 @@ export interface AnalysisFinding {
   explanation: string;
   quotes: AnalysisQuote[];
   healthyAlternative: string;
+  // What repeated exposure to this pattern does to the other person over
+  // time, when it recurs — distinct from `explanation`, which is about this
+  // one instance. Judging severity per-incident misses that a mild-looking
+  // exchange repeated monthly can matter more than one severe outlier.
+  cumulativeImpact: string;
 }
 
 // A healthy-communication instance — matched against HEALTHY_PATTERNS.

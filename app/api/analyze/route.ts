@@ -105,20 +105,28 @@ const TOOL: Anthropic.Tool = {
       findings: {
         type: "array",
         maxItems: MAX_FINDINGS,
-        description: `Concerning-pattern instances, most significant first (cap at ${MAX_FINDINGS} — group repeats of the same pattern from the same speaker into one entry with a higher instanceCount rather than listing near-duplicates). Apply the identical evidentiary bar to every speaker — do not favor whichever speaker uploaded this transcript.`,
+        description: `Concerning-pattern instances, most significant first (cap at ${MAX_FINDINGS} — group repeats of the same pattern from the same speaker into one entry with a higher frequency rather than listing near-duplicates). Apply the identical evidentiary bar to every speaker — do not favor whichever speaker uploaded this transcript.`,
         items: {
           type: "object",
           properties: {
             patternId: { type: "string", enum: Array.from(PATTERN_IDS) },
             title: { type: "string", description: "A short, specific description of this instance, e.g. 'Dismissing feelings with \"you're overreacting\"'." },
-            severity: { type: "string", enum: ["serious", "moderate", "minor"], description: "How severe THIS instance reads in context — independent of the pattern's general tier." },
+            severity: {
+              type: "string",
+              enum: ["serious", "moderate", "minor"],
+              description: "How severe THIS instance reads in context — independent of the pattern's general tier. A mild-looking instance that recurs often (see frequency + cumulativeImpact) can still warrant a higher severity than a one-off outlier.",
+            },
             frequency: { type: "string", enum: ["frequent", "occasional", "rare"] },
             attribution: { type: "string", description: "The speaker name who exhibited this, or 'Both' if it's mutual." },
             explanation: { type: "string", description: "Concrete: what was said, why it reads as this pattern rather than something more benign." },
             quotes: QUOTE_SCHEMA,
             healthyAlternative: { type: "string", description: "A short, concrete rewrite or approach specific to this excerpt — not generic advice." },
+            cumulativeImpact: {
+              type: "string",
+              description: "What repeated exposure to this pattern does to the person on the receiving end over time, if it recurs across the transcript — not just this one instance. If this is a genuine one-off with no established pattern, say that plainly rather than inventing a trend.",
+            },
           },
-          required: ["patternId", "title", "severity", "frequency", "attribution", "explanation", "quotes", "healthyAlternative"],
+          required: ["patternId", "title", "severity", "frequency", "attribution", "explanation", "quotes", "healthyAlternative", "cumulativeImpact"],
         },
       },
       healthyFindings: {
@@ -177,6 +185,8 @@ Evidence rules:
 - Do not diagnose anyone with a clinical or personality label, and do not predict the relationship's future. Describe behavior, not identity.
 - Never invent content that isn't in the transcript.
 - If nothing rises to the level of a pattern in a category, return an empty array for it and say so plainly in the relevant summary field — a clean result is a real result.
+
+Ongoing impact — judge patterns across the timeline, not just moment-to-moment: a single sharp incident and a mild-looking exchange that quietly repeats every few weeks are different problems, and a per-instance read that ignores repetition will understate the second one. When scoring severity and writing cumulativeImpact, weigh how a pattern lands on someone who has now been through it multiple times, not just how the single quoted exchange reads in isolation. Conversely, don't manufacture a trend where the transcript only shows one instance — say plainly when something reads as an isolated event.
 
 Coverage: the transcript you're given may be a sample rather than every message — see the note at the top of the user message. When it is, that sample is evenly spaced across the FULL conversation, from its very start to its very end, so every era is represented. Reflect that honestly: lower your confidence rating when working from a sample, and if the sampling could plausibly be hiding or diluting a pattern (e.g. a lot of concerning activity clustered in a gap between sampled messages), say so in overallSummary.
 
@@ -325,6 +335,7 @@ function normalizeResult(input: Record<string, unknown>): AnalysisResult {
       explanation: str(f.explanation),
       quotes: normalizeQuotes(f.quotes),
       healthyAlternative: str(f.healthyAlternative),
+      cumulativeImpact: str(f.cumulativeImpact),
     }))
     .slice(0, MAX_FINDINGS);
 

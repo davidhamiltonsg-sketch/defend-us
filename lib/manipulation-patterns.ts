@@ -24,8 +24,11 @@ import {
   PauseCircle,
   RefreshCw,
   ShieldCheck,
+  ShieldOff,
+  Shuffle,
   Smile,
   Sparkles,
+  Undo2,
   Users,
   VolumeX,
   Wind,
@@ -107,6 +110,16 @@ export const PATTERNS: PatternDef[] = [
     icon: VolumeX,
   },
   {
+    id: "defensiveness",
+    name: "Defensiveness",
+    severity: "significant",
+    summary:
+      "Meeting a raised concern with self-protective counter-attack, excuse-making, or reversing blame back onto the other person — treating being at fault as an accusation to repel rather than something to hear.",
+    citation: "Gottman, J.M., & Levenson, R.W. (1992). JPSP, 63(2), 221–233 — one of the Four Horsemen, alongside stonewalling.",
+    citationConfidence: "high",
+    icon: ShieldOff,
+  },
+  {
     id: "triangulation",
     name: "Triangulation",
     severity: "significant",
@@ -135,6 +148,26 @@ export const PATTERNS: PatternDef[] = [
     citation: "No academic source — a popular-recovery-content term, not peer-reviewed. Closest legitimate construct: intermittent reinforcement / idealization–devaluation cycling (Dutton & Painter, 1981, Victimology).",
     citationConfidence: "related",
     icon: Hourglass,
+  },
+  {
+    id: "deflection",
+    name: "Deflection",
+    severity: "moderate",
+    summary:
+      "Answering a direct question or concern by changing the subject, countering with a different question, or responding with vague reassurance — so the original point is never actually addressed. Distinct from blame-shifting: it avoids the substance rather than redirecting fault.",
+    citation: "Related construct: Christensen, A., & Heavey, C.L. (1990). Gender and social structure in the demand/withdraw pattern of marital conflict. Journal of Personality and Social Psychology, 59(1), 73–81 — the withdraw side of demand-withdraw.",
+    citationConfidence: "medium",
+    icon: Shuffle,
+  },
+  {
+    id: "conflict-appeasement",
+    name: "Conflict Appeasement",
+    severity: "moderate",
+    summary:
+      "Making a promise or concession specifically to end an argument in the moment, with no follow-through afterward — distinct from a genuine repair attempt (which changes behavior) and from Future Faking (which is about broader relationship/future commitments rather than in-the-moment capitulation).",
+    citation: "No single academic coiner. Related to the absence of Gottman's 'taking responsibility' antidote (Gottman & Silver, 1999) and, when the promise-then-nothing cycle repeats, to intermittent-reinforcement research (Dutton & Painter, 1981, Victimology).",
+    citationConfidence: "related",
+    icon: Undo2,
   },
   {
     id: "blame-shifting",

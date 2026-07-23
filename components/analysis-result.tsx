@@ -247,6 +247,13 @@ function FindingCard({ finding, expandAll }: { finding: AnalysisFinding; expandA
 
           <QuoteList quotes={finding.quotes} />
 
+          {finding.cumulativeImpact && (
+            <div className="rounded-lg border border-dusk/30 bg-dusk/[0.06] px-3.5 py-2.5">
+              <p className="font-mono text-[10px] uppercase tracking-eyebrow text-dusk-soft">Ongoing impact</p>
+              <p className="mt-1 text-sm leading-relaxed text-ash">{finding.cumulativeImpact}</p>
+            </div>
+          )}
+
           {finding.healthyAlternative && (
             <div className="rounded-lg border border-moss/30 bg-moss/[0.06] px-3.5 py-2.5">
               <p className="font-mono text-[10px] uppercase tracking-eyebrow text-moss">Healthier approach</p>
