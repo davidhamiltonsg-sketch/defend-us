@@ -3,7 +3,7 @@
 // Client data access goes through our own API routes (same origin). The server
 // talks to Firestore on the browser's behalf, so the browser never calls
 // googleapis.com directly.
-import type { ChatMessage, ContextData, Conversation, Incident } from "./types";
+import type { Analysis, ChatMessage, ContextData, Conversation, Incident } from "./types";
 
 class HttpError extends Error {
   constructor(public status: number, message: string) {
@@ -85,6 +85,17 @@ export async function generateTitle(text: string): Promise<string> {
   } catch {
     return "";
   }
+}
+
+// ---- Chat Lens (transcript analysis) ----
+export async function listAnalyses(): Promise<Analysis[]> {
+  return (await req<{ analyses: Analysis[] }>("/api/analyses")).analyses;
+}
+export async function analyzeChat(raw: string, filename?: string, title?: string): Promise<Analysis> {
+  return (await req<{ analysis: Analysis }>("/api/analyze", body({ raw, filename, title }))).analysis;
+}
+export async function deleteAnalysis(id: string): Promise<void> {
+  await req(`/api/analyses/${id}`, { method: "DELETE" });
 }
 
 // ---- Account ----

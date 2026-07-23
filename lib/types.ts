@@ -49,3 +49,92 @@ export interface ContextData {
   assets: string[];
   selfPatterns: string[];
 }
+
+// ---------------------------------------------------------------------------
+// Chat Lens — upload/paste a transcript, get it read against the manipulation
+// and healthy-communication catalogues in lib/manipulation-patterns.ts. Every
+// pattern in those catalogues is grounded in a cited, published source; the
+// analysis is instructed to treat every speaker symmetrically — see the
+// system prompt in app/api/analyze/route.ts.
+// ---------------------------------------------------------------------------
+
+export interface ParsedMessage {
+  speaker: string;
+  text: string;
+  timestamp?: string;
+}
+
+export interface AnalysisQuote {
+  speaker: string;
+  text: string;
+}
+
+export type AnalysisConfidence = "low" | "medium" | "high";
+export type FindingSeverity = "serious" | "moderate" | "minor";
+export type FindingFrequency = "frequent" | "occasional" | "rare";
+export type RiskLevel = "low" | "moderate" | "elevated" | "severe";
+
+// A concerning-pattern instance — matched against PATTERNS in manipulation-patterns.ts.
+export interface AnalysisFinding {
+  patternId: string;
+  title: string;
+  severity: FindingSeverity;
+  frequency: FindingFrequency;
+  attribution: string; // a speaker name, or "Both"
+  explanation: string;
+  quotes: AnalysisQuote[];
+  healthyAlternative: string;
+}
+
+// A healthy-communication instance — matched against HEALTHY_PATTERNS.
+export interface HealthyFinding {
+  patternId: string;
+  title: string;
+  frequency: FindingFrequency;
+  attribution: string;
+  explanation: string;
+  quotes: AnalysisQuote[];
+}
+
+// One point on the tension timeline chart.
+export interface TensionPoint {
+  label: string;
+  concernLevel: number; // 0-100
+}
+
+export interface AnalysisResult {
+  riskLevel: RiskLevel;
+  confidence: AnalysisConfidence;
+  overallSummary: string;
+  positiveObservations: string;
+  areasOfConcern: string;
+  tensionPatterns: string;
+  recommendations: string[];
+  speakers: string[];
+  tensionTimeline: TensionPoint[];
+  findings: AnalysisFinding[];
+  healthyFindings: HealthyFinding[];
+}
+
+export const EMPTY_ANALYSIS_RESULT: AnalysisResult = {
+  riskLevel: "low",
+  confidence: "low",
+  overallSummary: "",
+  positiveObservations: "",
+  areasOfConcern: "",
+  tensionPatterns: "",
+  recommendations: [],
+  speakers: [],
+  tensionTimeline: [],
+  findings: [],
+  healthyFindings: [],
+};
+
+export interface Analysis {
+  id?: string;
+  title: string;
+  createdAt: number;
+  sourceLabel: string;
+  messageCount: number;
+  result: AnalysisResult;
+}

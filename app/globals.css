@@ -171,6 +171,19 @@ body::after {
   background-color: #3a332a;
 }
 
+@media print {
+  @page {
+    margin: 0.75in;
+  }
+  body::before,
+  body::after {
+    display: none !important;
+  }
+  .animate-rise {
+    animation: none !important;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

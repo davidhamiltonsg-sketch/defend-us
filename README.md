@@ -9,6 +9,7 @@ Built from the operating context in `coaching-agent-prompt.md`. The coach is a [
 - **Dashboard** (`/`) — the standing context the coach always holds: the central tension, the facts, the non-negotiables, the asset side, and David's own counterweight patterns.
 - **Chat** (`/chat`) — streaming coaching conversation. The full charter + standing context is the system prompt; logged incidents are injected as context each turn. History persists in Firestore.
 - **Incidents** (`/incidents`) — a structured log following the Part 3 format. Entries feed straight into the coach's context.
+- **Chat Lens** (`/analyze`) — paste or upload a transcript (plain text, WhatsApp-style export, or JSON) and it's checked against a 13-pattern manipulation/communication catalogue (DARVO, gaslighting, coercive control, love bombing, and more), with verbatim quotes as evidence and a suggested healthier alternative for each finding. Past analyses are saved to Firestore; support-line resources are always shown alongside results.
 
 ## Stack
 

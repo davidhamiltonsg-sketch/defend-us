@@ -20,6 +20,7 @@ interface AuthState {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
+  forgotPassword: (email: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -70,6 +71,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signOut: async () => {
         await fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
         setEmail(null);
+      },
+      forgotPassword: async (e) => {
+        await fetch("/api/auth/forgot-password", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ email: e }),
+        }).catch(() => {});
       },
     }),
     [email, loading],

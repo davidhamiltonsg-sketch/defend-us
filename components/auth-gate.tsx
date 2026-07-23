@@ -29,12 +29,13 @@ export function AuthGate({ children }: { children: ReactNode }) {
 }
 
 function SignInForm() {
-  const { signIn, signUp } = useAuth();
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const { signIn, signUp, forgotPassword } = useAuth();
+  const [mode, setMode] = useState<"signin" | "signup" | "reset">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -42,12 +43,22 @@ function SignInForm() {
     setBusy(true);
     try {
       if (mode === "signin") await signIn(email, password);
-      else await signUp(email, password);
+      else if (mode === "signup") await signUp(email, password);
+      else {
+        await forgotPassword(email);
+        setResetSent(true);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong. Try again.");
     } finally {
       setBusy(false);
     }
+  }
+
+  function switchMode(next: "signin" | "signup" | "reset") {
+    setMode(next);
+    setError("");
+    setResetSent(false);
   }
 
   return (
@@ -78,43 +89,67 @@ function SignInForm() {
           honest — before the next hard conversation.
         </p>
 
-        <form onSubmit={submit} className="mt-7 space-y-3">
-          <Field
-            type="email"
-            autoComplete="email"
-            value={email}
-            onChange={setEmail}
-            placeholder="you@email.com"
-            label="Email"
-          />
-          <Field
-            type="password"
-            autoComplete={mode === "signin" ? "current-password" : "new-password"}
-            value={password}
-            onChange={setPassword}
-            placeholder="••••••••"
-            label="Password"
-            minLength={6}
-          />
-          {error && <p className="text-sm text-[#E59A8C]">{error}</p>}
-          <button
-            type="submit"
-            disabled={busy}
-            className="mt-1 w-full rounded-xl bg-ember px-4 py-3 font-medium text-night shadow-glow transition hover:bg-ember-soft disabled:opacity-50"
-          >
-            {busy ? "One moment…" : mode === "signin" ? "Sign in" : "Create account"}
-          </button>
-        </form>
+        {mode === "reset" && resetSent ? (
+          <div className="mt-7 rounded-xl border border-moss/30 bg-moss/[0.06] p-4">
+            <p className="text-sm leading-relaxed text-ash">
+              If that email has an account here, a password reset link is on its way to it. Follow
+              the link to set a new password, then come back and sign in.
+            </p>
+          </div>
+        ) : (
+          <form onSubmit={submit} className="mt-7 space-y-3">
+            <Field
+              type="email"
+              autoComplete="email"
+              value={email}
+              onChange={setEmail}
+              placeholder="you@email.com"
+              label="Email"
+            />
+            {mode !== "reset" && (
+              <Field
+                type="password"
+                autoComplete={mode === "signin" ? "current-password" : "new-password"}
+                value={password}
+                onChange={setPassword}
+                placeholder="••••••••"
+                label="Password"
+                minLength={6}
+              />
+            )}
+            {error && <p className="text-sm text-[#E59A8C]">{error}</p>}
+            <button
+              type="submit"
+              disabled={busy}
+              className="mt-1 w-full rounded-xl bg-ember px-4 py-3 font-medium text-night shadow-glow transition hover:bg-ember-soft disabled:opacity-50"
+            >
+              {busy
+                ? "One moment…"
+                : mode === "signin"
+                  ? "Sign in"
+                  : mode === "signup"
+                    ? "Create account"
+                    : "Send reset link"}
+            </button>
+          </form>
+        )}
 
-        <button
-          onClick={() => {
-            setMode(mode === "signin" ? "signup" : "signin");
-            setError("");
-          }}
-          className="mt-5 font-mono text-[11px] uppercase tracking-eyebrow text-smoke transition hover:text-ember"
-        >
-          {mode === "signin" ? "First time → create your account" : "← Back to sign in"}
-        </button>
+        <div className="mt-5 flex items-center justify-between">
+          <button
+            onClick={() => switchMode(mode === "signin" ? "signup" : "signin")}
+            className="font-mono text-[11px] uppercase tracking-eyebrow text-smoke transition hover:text-ember"
+          >
+            {mode === "signup" ? "← Back to sign in" : "First time → create your account"}
+          </button>
+          {mode !== "signup" && (
+            <button
+              onClick={() => switchMode(mode === "reset" ? "signin" : "reset")}
+              className="font-mono text-[11px] uppercase tracking-eyebrow text-smoke transition hover:text-ember"
+            >
+              {mode === "reset" ? "← Back to sign in" : "Forgot password?"}
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

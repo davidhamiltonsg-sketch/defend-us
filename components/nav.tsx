@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Command, LayoutDashboard, MessageCircle, NotebookPen, Settings } from "lucide-react";
+import { Command, LayoutDashboard, MessageCircle, NotebookPen, ScanSearch, Settings } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { Mark } from "./mark";
 
@@ -10,6 +10,7 @@ const LINKS = [
   { href: "/", label: "Context", icon: LayoutDashboard },
   { href: "/chat", label: "Talk", icon: MessageCircle },
   { href: "/incidents", label: "Log", icon: NotebookPen },
+  { href: "/analyze", label: "Lens", icon: ScanSearch },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
@@ -20,7 +21,7 @@ export function Nav() {
   if (!allowed) return null;
 
   return (
-    <header className="sticky top-0 z-40 border-b border-night-hair/70 bg-night/70 backdrop-blur-xl">
+    <header className="sticky top-0 z-40 border-b border-night-hair/70 bg-night/70 backdrop-blur-xl print:hidden">
       <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-5 py-3.5">
         <Link href="/" className="group flex items-center gap-2 text-ember">
           <Mark className="h-6 w-6 transition group-hover:text-ember-soft" />
