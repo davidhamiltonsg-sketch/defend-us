@@ -12,6 +12,7 @@
 import {
   ArrowRightLeft,
   ArrowUpDown,
+  Asterisk,
   Drama,
   Ear,
   Eye,
@@ -31,6 +32,7 @@ import {
   Undo2,
   Users,
   VolumeX,
+  Wand2,
   Wind,
   Zap,
   type LucideIcon,
@@ -168,6 +170,26 @@ export const PATTERNS: PatternDef[] = [
     citation: "No single academic coiner. Related to the absence of Gottman's 'taking responsibility' antidote (Gottman & Silver, 1999) and, when the promise-then-nothing cycle repeats, to intermittent-reinforcement research (Dutton & Painter, 1981, Victimology).",
     citationConfidence: "related",
     icon: Undo2,
+  },
+  {
+    id: "conditional-accountability",
+    name: "Conditional Accountability",
+    severity: "moderate",
+    summary:
+      "An apology or admission of fault immediately paired with a 'but,' a counter-grievance, or a demand that the other person also be held accountable before it counts — diluting ownership rather than completing it. Distinct from Performative Apologies, which lack acknowledgment altogether; this one starts as a real admission and gets walked back within the same breath.",
+    citation: "Absence of Gottman's 'taking responsibility' antidote to defensiveness (Gottman & Silver, 1999); an effective apology per Lazare, A. (2004), On Apology, does not condition acknowledgment on the other party's concession.",
+    citationConfidence: "medium",
+    icon: Asterisk,
+  },
+  {
+    id: "motive-attribution",
+    name: "Unfounded Motive Attribution",
+    severity: "moderate",
+    summary:
+      "Confidently asserting what someone secretly wants, feels, or intends — with no stated evidence — and treating that inference as settled fact rather than a guess. ('You did that because you wanted control back.')",
+    citation: "Ross, L. (1977). The intuitive psychologist and his shortcomings: Distortions in the attribution process. Advances in Experimental Social Psychology, 10, 173–220 — the fundamental attribution error.",
+    citationConfidence: "high",
+    icon: Wand2,
   },
   {
     id: "blame-shifting",
